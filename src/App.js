@@ -1,20 +1,20 @@
-import './App.css';
-import BackGround from './components/BackGround/BackGround';
-import Cards from './components/Cards/Cards';
-import NavBar from './components/Navbar/NavBar';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import "./App.css";
+import Footer from "./components/Footer/Footer";
+import NavBar from "./components/Navbar/NavBar";
+import Home from "./components/Home/Home";
 
 function App() {
   return (
     <div>
-      <div>
+      <BrowserRouter>
         <NavBar />
-      </div>
-      <div>
-        <BackGround />
-      </div>
-      <div>
-        <Cards />
-      </div>
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/home' element={<Home />} />
+        </Routes>
+        <Footer />
+      </BrowserRouter>
     </div>
   );
 }

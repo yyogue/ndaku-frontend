@@ -2,15 +2,14 @@ import React from "react";
 import Card from "react-bootstrap/Card";
 import "./Cards.scss";
 import CardImage from "../CardImage/CardImage";
-
-const image =
-  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/494295430.jpg?k=1ce9f721c022d882690f6e9743173b28f3a441b9a55ff64c9dbbaf4be8f9761e&o=&hp=1";
+import ExploreMsg from "../ExpoloreMsg/ExploreMsg";
 
 function Cards() {
   return (
     <>
+    <ExploreMsg />
       <div className="mainCards">
-        <Card style={{ width: "18rem" }}>
+        <Card className="card" style={{ width: "18rem" }}>
           <CardImage />
           <Card.Body>
             <Card.Title>Card Title 1</Card.Title>
