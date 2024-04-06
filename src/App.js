@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import "./App.css";
 import Footer from "./components/Footer/Footer";
 import NavBar from "./components/Navbar/NavBar";
 import Home from "./components/Home/Home";
+import ViewCard from "./components/ViewCard/ViewCard";
+import "./App.css";
+
 
 function App() {
   return (
@@ -12,11 +14,12 @@ function App() {
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/home' element={<Home />} />
+          <Route path='/view' element={<ViewCard />} />
         </Routes>
         <Footer />
       </BrowserRouter>
     </div>
   );
-}
+};
 
 export default App;

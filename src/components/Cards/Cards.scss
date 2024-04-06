@@ -1,11 +1,22 @@
-.mainCards{
+.mainCards {
   display: flex;
-  justify-content: space-around;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 20px;
   margin-bottom: 50px;
 }
-.card{
+
+.cardContainer {
+  width: 25%; /* Set each card container to occupy 25% of the container's width */
+  padding: 0 10px; /* Add padding to create space between each card */
+}
+
+.card {
+  width: 100%; /* Make each card fill its container */
+  margin-bottom: 20px; /* Add margin at the bottom */
   cursor: pointer;
 }
+
 .card:hover {
-  transform: scale(1.1); /* Zoom effect */
+  transform: scale(1.1);
 }
