@@ -11,8 +11,8 @@ function Cards() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const onClickCard = () => {
-    navigate("/view");
+  const onClickCard = (listingId) => {
+    navigate(`/view/${listingId}`);
   };
 
   useEffect(() => {
@@ -39,28 +39,31 @@ function Cards() {
 
   const renderListings = () => {
     return listings.map((listing) => {
-      const image = listing.image || "";
+      const listingId = listing._id; // Corrected to use listing._id
+      const image = listing.image;
       if (listing.typeOfListing.apartment) {
         return (
-          <div key={listing._id} className="cardContainer">
+          <div key={listingId} className="cardContainer">
             <Card style={{ width: "18rem" }}>
               <CardImage imageUrl={image} />
-              <Card.Body onClick={onClickCard}>
-                <Card.Title>
+              <Card.Body onClick={() => onClickCard(listingId)}>
+                <Card.Title className="position">
                   {listing.listerFirstName} {listing.listerLastName}
                 </Card.Title>
                 <Card.Text>
-                  Type: Apartment
-                  <br />
-                  Floor: {listing.typeOfListing.apartment.floor}
-                  <br />
-                  Bedrooms: {listing.typeOfListing.apartment.bedroom}
-                  <br />
-                  Bathrooms: {listing.typeOfListing.apartment.bathroom}
-                  <br />
-                  Kitchen: {listing.typeOfListing.apartment.kitchen}
-                  <br />
-                  Dining Room: {listing.typeOfListing.apartment.dinningRoom}
+                  <h2 className="position">Apartment</h2>
+                  <div className="position">
+                    {listing.address} {listing.quartier} {listing.commune},
+                  </div>
+                  <div className="position">
+                    {listing.district} {listing.ville}
+                  </div>
+                  <div className="position">
+                    {listing.typeOfListing.apartment.bedroom} chambre(s) | {listing.typeOfListing.apartment.bathroom} salle(s) de bain(s)
+                  </div>
+                  <div className="position">
+                    ${listing.priceMonthly} par mois
+                  </div>
                 </Card.Text>
               </Card.Body>
             </Card>
@@ -68,23 +71,30 @@ function Cards() {
         );
       } else if (listing.typeOfListing.house) {
         return (
-          <div key={listing._id} className="cardContainer">
-            <Card onClick={onClickCard} style={{ width: "18rem" }}>
+          <div key={listingId}>
+            <Card
+              onClick={() => onClickCard(listingId)}
+              style={{ width: "18rem" }}
+            >
               <CardImage imageUrl={image} />
               <Card.Body onClick={onClickCard}>
-                <Card.Title>
+              <Card.Title className="position">
                   {listing.listerFirstName} {listing.listerLastName}
                 </Card.Title>
                 <Card.Text>
-                  Type: House
-                  <br />
-                  Bedrooms: {listing.typeOfListing.house.bedroom}
-                  <br />
-                  Bathrooms: {listing.typeOfListing.house.bathroom}
-                  <br />
-                  Kitchen: {listing.typeOfListing.house.kitchen}
-                  <br />
-                  Dining Room: {listing.typeOfListing.house.dinningRoom}
+                  <h2 className="position">Maison</h2>
+                  <div className="position">
+                    {listing.address} {listing.quartier} {listing.commune},
+                  </div>
+                  <div className="position">
+                    {listing.district} {listing.ville}
+                  </div>
+                  <div className="position">
+                    {listing.typeOfListing.house.bedroom} chambre(s) | {listing.typeOfListing.house.bathroom} salle(s) de bain(s)
+                  </div>
+                  <div className="position">
+                    ${listing.priceMonthly} par mois
+                  </div>
                 </Card.Text>
               </Card.Body>
             </Card>

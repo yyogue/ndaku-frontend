@@ -14,7 +14,7 @@ function App() {
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/home' element={<Home />} />
-          <Route path='/view' element={<ViewCard />} />
+          <Route path='/view/:listingId' element={<ViewCard />} />
         </Routes>
         <Footer />
       </BrowserRouter>

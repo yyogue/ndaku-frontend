@@ -2,7 +2,7 @@ import Carousel from 'react-bootstrap/Carousel';
 
 function CardImage({ imageUrl }) {
   return (
-    <Carousel data-bs-theme="dark">
+    <Carousel data-bs-theme="dark" interval={null}>
       <Carousel.Item>
         <img
           className="d-block w-100"

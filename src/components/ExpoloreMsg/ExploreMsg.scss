@@ -8,3 +8,13 @@
   margin: 40px 0px;
   font-family: 'Quicksand', sans-serif;
 }
+
+@media (max-width: 767px) {
+  .msg {
+    flex-direction: column; /* Change to column layout for small screens */
+    align-items: center; /* Center items vertically */
+    display: flex;
+    justify-content: center;
+    text-align: center;
+  }
+}

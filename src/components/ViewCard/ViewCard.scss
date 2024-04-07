@@ -1,0 +1,13 @@
+.mainView {
+  .carousel-item {
+    img {
+      max-width: 100%; // Ensures image doesn't exceed container width
+      @media (min-width: 768px) {
+        max-height: 400px; // Adjust the height for larger screens
+      }
+      @media (min-width: 992px) {
+        max-height: 500px; // Further adjust the height for larger screens
+      }
+    }
+  }
+}
