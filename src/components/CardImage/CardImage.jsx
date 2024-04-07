@@ -1,28 +1,26 @@
 import Carousel from 'react-bootstrap/Carousel';
-const image = "https://cf.bstatic.com/xdata/images/hotel/max1024x768/494295430.jpg?k=1ce9f721c022d882690f6e9743173b28f3a441b9a55ff64c9dbbaf4be8f9761e&o=&hp=1"
 
-
-function CardImage() {
+function CardImage({ imageUrl }) {
   return (
-    <Carousel data-bs-theme="dark">
+    <Carousel data-bs-theme="dark" interval={null}>
       <Carousel.Item>
         <img
           className="d-block w-100"
-          src={image}
+          src={imageUrl}
           alt="First slide"
         />
       </Carousel.Item>
       <Carousel.Item>
         <img
           className="d-block w-100"
-          src={image}
+          src={imageUrl}
           alt="Second slide"
         />
       </Carousel.Item>
       <Carousel.Item>
         <img
           className="d-block w-100"
-          src={image}
+          src={imageUrl}
           alt="Third slide"
         />
       </Carousel.Item>
