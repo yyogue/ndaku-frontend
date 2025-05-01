@@ -1,0 +1,126 @@
+.mainNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0d9051;
+  padding: 16px 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1000;
+
+  .logo {
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .navText {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+    z-index: 0; 
+    padding: 0 60px;
+    pointer-events: none;
+  }
+  
+
+  .hamburger {
+    display: none;
+    cursor: pointer;
+    z-index: 1001;
+    color: white;
+  }
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background-color: #0d9051;
+
+  .navLink {
+    color: white;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #d1f7e3;
+    }
+  }
+
+  .authLinks {
+    display: flex;
+    gap: 12px;
+
+    .login,
+    .signup {
+      color: white;
+      text-decoration: none;
+
+      &:hover {
+        color: #d1f7e3;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .mainNav {
+    flex-wrap: nowrap;
+
+    .hamburger {
+      display: block;
+    }
+  }
+
+  .navLinks {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 0;
+    justify-items: center;
+    text-align: center;
+    padding: 0 32px;
+    background-color: #0d9051;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s ease-in-out;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 999;
+
+    &.active {
+      max-height: 600px;
+      padding: 20px 32px;
+    }
+
+    .navLink,
+    .authLinks .login,
+    .authLinks .signup {
+      color: white;
+      text-decoration: none;
+      padding: 5px 10px;
+      transition: color 0.2s;
+
+      &:hover {
+        color: #d1f7e3;
+      }
+    }
+
+    .authLinks {
+      grid-column: span 3;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
+    }
+  }
+}

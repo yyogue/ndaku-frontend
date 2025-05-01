@@ -1,0 +1,135 @@
+.login-wrapper {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+
+  /* Desktop Styles */
+  .login-image-side {
+    flex: 1;
+    background-image: url("https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1050&q=80");
+    background-size: cover;
+    background-position: center;
+    display: block;
+    height: 100vh;
+  }
+
+  .login-form-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5fff9;
+    padding: 40px;
+  }
+
+  .login-container {
+    max-width: 400px;
+    width: 100%;
+    background-color: white;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(13, 144, 81, 0.1);
+    text-align: center;
+
+    h2 {
+      color: #0d9051;
+      margin-bottom: 24px;
+      font-size: 28px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+
+      input {
+        padding: 14px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+        &:focus {
+          border-color: #0d9051;
+          box-shadow: 0 0 0 3px rgba(13, 144, 81, 0.2);
+          outline: none;
+        }
+      }
+
+      button {
+        background-color: #0d9051;
+        color: white;
+        border: none;
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+
+        &:hover {
+          background-color: #0b7a45;
+        }
+      }
+
+      .forgot-password {
+        font-size: 14px;
+        color: #0d9051;
+        text-align: left;
+        margin-top: 10px;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+
+      .terms {
+        font-size: 12px;
+        color: #666;
+        margin-top: 10px;
+        text-align: center;
+
+        a {
+          color: #0d9051;
+          text-decoration: none;
+        }
+      }
+    }
+
+    .new-account {
+      font-size: 14px;
+      color: #0d9051;
+      margin-top: 20px;
+      cursor: pointer;
+      text-decoration: underline;
+      text-align: center;
+    }
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 768px) {
+    .login-wrapper {
+      flex-direction: column;
+      padding: 0;
+    }
+
+    .login-image-side {
+      display: none; /* Hide image on mobile */
+    }
+
+    .login-form-side {
+      width: 100%;
+      height: 100%;
+      padding: 16px;
+      background-color: transparent; /* Transparent background */
+      background-image: url("https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1050&q=80");
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      padding: 16px;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.8); /* Transparent background for form */
+    }
+  }
+}
