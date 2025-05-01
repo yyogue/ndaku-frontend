@@ -23,11 +23,10 @@
     color: white;
     font-size: 24px;
     font-weight: 600;
-    z-index: 0; 
+    z-index: 0;
     padding: 0 60px;
     pointer-events: none;
   }
-  
 
   .hamburger {
     display: none;
@@ -40,7 +39,7 @@
 .navLinks {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   padding: 16px 32px;
   background-color: #0d9051;
 
@@ -51,6 +50,21 @@
 
     &:hover {
       color: #d1f7e3;
+    }
+  }
+
+  .listPropertyBtn {
+    background-color: white;
+    color: #0d9051;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #d1f7e3;
+      color: #0d9051;
     }
   }
 
@@ -103,6 +117,7 @@
     }
 
     .navLink,
+    .listPropertyBtn,
     .authLinks .login,
     .authLinks .signup {
       color: white;
@@ -112,6 +127,17 @@
 
       &:hover {
         color: #d1f7e3;
+      }
+    }
+
+    .listPropertyBtn {
+      background-color: white;
+      color: #0d9051;
+      font-weight: bold;
+      border-radius: 5px;
+
+      &:hover {
+        background-color: #d1f7e3;
       }
     }
 

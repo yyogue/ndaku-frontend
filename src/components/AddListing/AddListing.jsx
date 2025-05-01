@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import API from "../../services/api";
 import "./AddListing.scss";
 
 const AddListing = () => {
@@ -9,8 +11,8 @@ const AddListing = () => {
     listerEmailAddress: "",
     listerPhoneNumber: "",
     typeOfListing: "",
-    priceMonthly: "",
-    priceDaily: "",
+    listingType: "",
+    price: "",
     details: {
       floor: "",
       bedroom: "",
@@ -25,8 +27,10 @@ const AddListing = () => {
     ville: "",
   });
 
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
+  const token = useSelector((state) => state.auth.token);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,29 +49,46 @@ const AddListing = () => {
   };
 
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    setImages(Array.from(e.target.files));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
 
+    // Add form data
     Object.entries(formData).forEach(([key, value]) => {
       if (typeof value === "object" && value !== null) {
         Object.entries(value).forEach(([subKey, subVal]) => {
           data.append(`details.${subKey}`, subVal);
         });
-      } else {
+      } else if (key !== "price") {
         data.append(key, value);
       }
     });
 
-    if (image) data.append("image", image);
+    // Add correct price field
+    if (formData.listingType === "sale") {
+      data.append("priceSale", formData.price);
+    } else if (formData.listingType === "rent") {
+      data.append("priceMonthly", formData.price);
+    } else if (formData.listingType === "daily") {
+      data.append("priceDaily", formData.price);
+    }
+
+    // Add images
+    images.forEach((file) => {
+      data.append("images", file);
+    });
 
     try {
-      const res = await axios.post("http://localhost:8080/api/listings", data, {
-        headers: { "Content-Type": "multipart/form-data" },
+      await API.post("/listings/add", data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
+
       setMessage("Listing added successfully!");
       setFormData({
         listerFirstName: "",
@@ -75,8 +96,8 @@ const AddListing = () => {
         listerEmailAddress: "",
         listerPhoneNumber: "",
         typeOfListing: "",
-        priceMonthly: "",
-        priceDaily: "",
+        listingType: "",
+        price: "",
         details: {
           floor: "",
           bedroom: "",
@@ -90,9 +111,28 @@ const AddListing = () => {
         district: "",
         ville: "",
       });
-      setImage(null);
+      setImages([]);
+
+      setTimeout(() => {
+        navigate("/list-property");
+      }, 1500);
     } catch (err) {
+      console.error(err);
       setMessage("Error uploading listing. Please try again.");
+    }
+  };
+
+  // Dynamic label for price
+  const getPriceLabel = () => {
+    switch (formData.listingType) {
+      case "rent":
+        return "Monthly Rent";
+      case "daily":
+        return "Daily Rent";
+      case "sale":
+        return "Sale Price";
+      default:
+        return "Price";
     }
   };
 
@@ -100,6 +140,7 @@ const AddListing = () => {
     <div className="add-listing-container">
       <h2>Add New Listing</h2>
       <form onSubmit={handleSubmit} className="listing-form">
+        {/* Personal Info */}
         <div className="form-group">
           <input
             type="text"
@@ -136,6 +177,8 @@ const AddListing = () => {
             required
           />
         </div>
+
+        {/* Type of Listing */}
         <div className="form-group">
           <select
             name="typeOfListing"
@@ -143,29 +186,41 @@ const AddListing = () => {
             onChange={handleChange}
             required
           >
-            <option value="">Select Type</option>
+            <option value="">Select Type of Listing</option>
             <option value="apartment">Apartment</option>
             <option value="house">House</option>
             <option value="condo">Condo</option>
           </select>
-          <input
-            type="number"
-            name="priceMonthly"
-            placeholder="Monthly Price"
-            value={formData.priceMonthly}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="number"
-            name="priceDaily"
-            placeholder="Daily Price"
-            value={formData.priceDaily}
-            onChange={handleChange}
-            required
-          />
         </div>
 
+        {/* Listing Type and Price */}
+        <div className="form-group listing-price">
+          <select
+            name="listingType"
+            value={formData.listingType}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Listing Type</option>
+            <option value="rent">Rent</option>
+            <option value="daily">Daily</option>
+            <option value="sale">Sale</option>
+          </select>
+
+          <div className="price-input">
+            <span>$</span>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              placeholder={getPriceLabel()}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Details */}
         <div className="form-group details-group">
           <input
             type="number"
@@ -204,6 +259,7 @@ const AddListing = () => {
           />
         </div>
 
+        {/* Address */}
         <div className="form-group">
           <input
             type="text"
@@ -247,8 +303,14 @@ const AddListing = () => {
           />
         </div>
 
+        {/* Image Upload */}
         <div className="form-group">
-          <input type="file" onChange={handleImageChange} accept="image/*" />
+          <input
+            type="file"
+            onChange={handleImageChange}
+            multiple
+            accept="image/*"
+          />
         </div>
 
         <button type="submit">Submit</button>

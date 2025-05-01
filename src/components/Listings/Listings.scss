@@ -1,0 +1,82 @@
+.listings {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.listing-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.listing-header h3 {
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.listing-header p {
+  font-size: 1rem;
+  color: #888;
+}
+
+.listing-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listing-body p {
+  font-size: 1rem;
+  color: #444;
+}
+
+.listing-images {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.listing-images img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.listing-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.listing-actions button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.listing-actions button:hover {
+  background-color: #0056b3;
+}
+
+.listing-actions button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

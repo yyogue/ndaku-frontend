@@ -9,6 +9,11 @@ import FAQ from "./src/Pages/FAQ/FAQ";
 import AboutUs from "./src/Pages/AboutUs/AboutUs";
 import Login from "./src/Pages/Login/Login"
 import Signup from "./src/Pages/Signup/Signup";
+import DashboardLayout from "./src/components/DashboardLayout/DashboardLayout";
+import UpdateListing from "./src/components/UpdateListing/UpdateListing";
+
+
+
 
 const App = () => {
   return (
@@ -22,6 +27,8 @@ const App = () => {
         <Route path="/faq" element={<FAQ />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/list-property" element={<DashboardLayout />} />
+        <Route path="/update-listing/:id" element={<UpdateListing />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/" exact element={<Home />} />
       </Routes>
