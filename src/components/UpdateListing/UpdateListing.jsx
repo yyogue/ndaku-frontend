@@ -29,26 +29,35 @@ const UpdateListing = () => {
   });
 
   const [images, setImages] = useState([]);
-  const [message, setMessage] = useState("");
+  const [existingImages, setExistingImages] = useState([]);
+  const [removedImages, setRemovedImages] = useState([]);
+  const [message, setMessage] = useState({ text: "", type: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const token = useSelector((state) => state.auth.token);
 
   useEffect(() => {
     const fetchListing = async () => {
       try {
-        if (!token) {
-          setMessage("Authentication token missing.");
-          return;
+        // Validate the ID first
+        if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
+          throw new Error("Invalid listing ID");
         }
-
-        const response = await API.get(`/listings/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+  
+        const response = await API.get(`/api/listings/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        const listing = response.data.listing || response.data;
-
+  
+        const listing = response.data;
+        
+        if (!listing) {
+          throw new Error("Listing not found");
+        }
+  
+        // Rest of your existing code...
+        const inferredPrice =
+          listing.priceMonthly || listing.priceDaily || listing.priceSale || "";
+  
         setFormData({
           listerFirstName: listing.listerFirstName || "",
           listerLastName: listing.listerLastName || "",
@@ -56,14 +65,13 @@ const UpdateListing = () => {
           listerPhoneNumber: listing.listerPhoneNumber || "",
           typeOfListing: listing.typeOfListing || "",
           listingType: listing.listingType || "",
-          price:
-            listing.priceMonthly || listing.priceDaily || listing.priceSale || "",
-          details: listing.details || {
-            floor: "",
-            bedroom: "",
-            bathroom: "",
-            kitchen: "",
-            dinningRoom: "",
+          price: inferredPrice.toString(),
+          details: {
+            floor: listing.details?.floor || "",
+            bedroom: listing.details?.bedroom || "",
+            bathroom: listing.details?.bathroom || "",
+            kitchen: listing.details?.kitchen || "",
+            dinningRoom: listing.details?.dinningRoom || "",
           },
           address: listing.address || "",
           quartier: listing.quartier || "",
@@ -71,26 +79,29 @@ const UpdateListing = () => {
           district: listing.district || "",
           ville: listing.ville || "",
         });
-
-        setImages(listing.images || []);
-      } catch (err) {
-        console.error(err);
-        setMessage("Error fetching listing details.");
+  
+        setExistingImages(listing.images || []);
+      } catch (error) {
+        console.error("Error fetching listing:", error);
+        setMessage({ 
+          text: error.message || "Error fetching listing.", 
+          type: "error" 
+        });
+        // Optionally redirect after showing error
+        setTimeout(() => navigate("/list-property"), 2000);
       }
     };
-
+    
     fetchListing();
-  }, [id, token]);
+  }, [id, token, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     if (name in formData.details) {
       setFormData((prev) => ({
         ...prev,
-        details: {
-          ...prev.details,
-          [name]: value,
-        },
+        details: { ...prev.details, [name]: value },
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -101,67 +112,97 @@ const UpdateListing = () => {
     setImages(Array.from(e.target.files));
   };
 
+  const handleImageRemove = (index) => {
+    const newImages = [...existingImages];
+    const removed = newImages.splice(index, 1);
+    setExistingImages(newImages);
+    setRemovedImages(prev => [...prev, removed[0]]);
+  };
+
+  const handlePreviewImageRemove = (index) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+  };
+
+  const getPriceLabel = () => {
+    switch (formData.listingType) {
+      case "rent": return "Monthly Rent";
+      case "daily": return "Daily Rent";
+      case "sale": return "Sale Price";
+      default: return "Price";
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = new FormData();
-
-    Object.entries(formData).forEach(([key, value]) => {
-      if (typeof value === "object" && value !== null) {
-        Object.entries(value).forEach(([subKey, subVal]) => {
-          data.append(`details.${subKey}`, subVal);
-        });
-      } else if (key !== "price") {
-        data.append(key, value);
-      }
-    });
-
-    if (formData.listingType === "sale") {
-      data.append("priceSale", formData.price);
-    } else if (formData.listingType === "rent") {
-      data.append("priceMonthly", formData.price);
-    } else if (formData.listingType === "daily") {
-      data.append("priceDaily", formData.price);
-    }
-
-    images.forEach((file) => {
-      data.append("images", file);
-    });
+    setIsSubmitting(true);
+    setMessage({ text: "", type: "" });
 
     try {
-      await API.put(`/listings/update/${id}`, data, {
+      const data = new FormData();
+
+      // Append basic fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "details") {
+          data.append("details", JSON.stringify(value));
+        } else if (key !== "price") {
+          data.append(key, value);
+        }
+      });
+
+      // Append price based on listing type
+      const priceValue = parseFloat(formData.price) || 0;
+      if (formData.listingType === "sale") {
+        data.append("priceSale", priceValue);
+      } else if (formData.listingType === "rent") {
+        data.append("priceMonthly", priceValue);
+      } else if (formData.listingType === "daily") {
+        data.append("priceDaily", priceValue);
+      }
+
+      // Append new images
+      images.forEach((file) => {
+        data.append("images", file);
+      });
+
+      // Append removed images
+      removedImages.forEach((imageUrl) => {
+        data.append("removedImages", imageUrl);
+      });
+
+      await API.put(`/api/listings/update/${id}`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
 
-      setMessage("Listing updated successfully!");
-      setTimeout(() => {
-        navigate("/list-property");
-      }, 1500);
+      setMessage({ 
+        text: "Listing updated successfully!", 
+        type: "success" 
+      });
+      setTimeout(() => navigate("/list-property"), 1500);
     } catch (err) {
-      console.error(err);
-      setMessage("Error updating listing. Please try again.");
-    }
-  };
-
-  const getPriceLabel = () => {
-    switch (formData.listingType) {
-      case "rent":
-        return "Monthly Rent";
-      case "daily":
-        return "Daily Rent";
-      case "sale":
-        return "Sale Price";
-      default:
-        return "Price";
+      console.error("Update error:", err.response?.data || err.message);
+      setMessage({ 
+        text: err.response?.data?.message || "Error updating listing",
+        type: "error"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="update-listing-container">
       <h2>Update Listing</h2>
+      {message.text && (
+        <div className={`message ${message.type}`}>{message.text}</div>
+      )}
+
       <form onSubmit={handleSubmit} className="listing-form">
+        {/* Personal Info */}
         <div className="form-group">
           <input
             type="text"
@@ -180,6 +221,8 @@ const UpdateListing = () => {
             required
           />
         </div>
+
+        {/* Contact Info */}
         <div className="form-group">
           <input
             type="email"
@@ -198,6 +241,8 @@ const UpdateListing = () => {
             required
           />
         </div>
+
+        {/* Listing Type */}
         <div className="form-group">
           <select
             name="typeOfListing"
@@ -211,6 +256,8 @@ const UpdateListing = () => {
             <option value="condo">Condo</option>
           </select>
         </div>
+
+        {/* Price Section */}
         <div className="form-group listing-price">
           <select
             name="listingType"
@@ -223,6 +270,7 @@ const UpdateListing = () => {
             <option value="daily">Daily</option>
             <option value="sale">Sale</option>
           </select>
+
           <div className="price-input">
             <span>$</span>
             <input
@@ -235,95 +283,95 @@ const UpdateListing = () => {
             />
           </div>
         </div>
+
+        {/* Details */}
         <div className="form-group details-group">
-          <input
-            type="number"
-            name="floor"
-            placeholder="Floor"
-            value={formData.details.floor}
-            onChange={handleChange}
-          />
-          <input
-            type="number"
-            name="bedroom"
-            placeholder="Bedrooms"
-            value={formData.details.bedroom}
-            onChange={handleChange}
-          />
-          <input
-            type="number"
-            name="bathroom"
-            placeholder="Bathrooms"
-            value={formData.details.bathroom}
-            onChange={handleChange}
-          />
-          <input
-            type="number"
-            name="kitchen"
-            placeholder="Kitchens"
-            value={formData.details.kitchen}
-            onChange={handleChange}
-          />
-          <input
-            type="number"
-            name="dinningRoom"
-            placeholder="Dining Rooms"
-            value={formData.details.dinningRoom}
-            onChange={handleChange}
-          />
+          {["floor", "bedroom", "bathroom", "kitchen", "dinningRoom"].map((key) => (
+            <input
+              key={key}
+              type="number"
+              name={key}
+              placeholder={key[0].toUpperCase() + key.slice(1)}
+              value={formData.details[key]}
+              onChange={handleChange}
+            />
+          ))}
         </div>
+
+        {/* Address */}
         <div className="form-group">
-          <input
-            type="text"
-            name="address"
-            placeholder="Address"
-            value={formData.address}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="text"
-            name="quartier"
-            placeholder="Quartier"
-            value={formData.quartier}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="text"
-            name="commune"
-            placeholder="Commune"
-            value={formData.commune}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="text"
-            name="district"
-            placeholder="District"
-            value={formData.district}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="text"
-            name="ville"
-            placeholder="City"
-            value={formData.ville}
-            onChange={handleChange}
-            required
-          />
+          {["address", "quartier", "commune", "district", "ville"].map((field) => (
+            <input
+              key={field}
+              type="text"
+              name={field}
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={formData[field]}
+              onChange={handleChange}
+              required
+            />
+          ))}
         </div>
+
+        {/* Image Upload */}
         <div className="form-group">
-          <input
-            type="file"
-            onChange={handleImageChange}
-            multiple
-            accept="image/*"
-          />
+          <label>
+            Add New Images
+            <input
+              type="file"
+              onChange={handleImageChange}
+              multiple
+              accept="image/*"
+            />
+          </label>
+
+          {/* New Image Previews */}
+          {images.length > 0 && (
+            <div className="image-section">
+              <h4>New Images to Upload</h4>
+              <div className="image-previews">
+                {images.map((image, index) => (
+                  <div key={`new-${index}`} className="image-preview">
+                    <img
+                      src={URL.createObjectURL(image)}
+                      alt={`Preview ${index}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewImageRemove(index)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Existing Images */}
+          {existingImages.length > 0 && (
+            <div className="image-section">
+              <h4>Current Images</h4>
+              <div className="image-previews">
+                {existingImages.map((image, index) => (
+                  <div key={`existing-${index}`} className="image-preview">
+                    <img src={image} alt={`Existing ${index}`} />
+                    <button
+                      type="button"
+                      onClick={() => handleImageRemove(index)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <button type="submit">Update Listing</button>
-        {message && <p className="message">{message}</p>}
+
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Updating..." : "Update Listing"}
+        </button>
       </form>
     </div>
   );

@@ -2,37 +2,40 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: './index.js',  // Your main entry file
+  entry: './index.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
+    publicPath: '/',
     clean: true,
   },
   resolve: {
-    extensions: ['.js', '.jsx'],  // Resolve .js and .jsx file extensions
+    extensions: ['.js', '.jsx', '.css'],
   },
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/, // Process .js and .jsx files
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: 'babel-loader',
       },
       {
-        test: /\.(sass|less|scss)$/,
-        use: ['style-loader', 'css-loader'],
-      },
+        test: /\.scss$/,
+        use: ['style-loader', 'css-loader', 'sass-loader'],
+      }
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './public/index.html',  // Link to your HTML template
+      template: './public/index.html',
     }),
   ],
   devServer: {
+    historyApiFallback: true, // Moved here (only one devServer config)
     static: './dist',
     port: 3000,
-    open: true,  // Automatically open the browser when the server starts
+    open: true,
+    hot: true,
   },
   mode: 'development',
 };

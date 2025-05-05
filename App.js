@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; // Updated import
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom"; // Added Navigate here
 import NavBar from "./src/components/NavBar/NavBar";
 import Home from "./src/components/Home/Home";
 import ForRent from "./src/Pages/ForRent/ForRent";
@@ -7,13 +7,10 @@ import ForSale from "./src/Pages/ForSale/ForSale";
 import ContactUs from "./src/Pages/ContactUs/ContactUs";
 import FAQ from "./src/Pages/FAQ/FAQ";
 import AboutUs from "./src/Pages/AboutUs/AboutUs";
-import Login from "./src/Pages/Login/Login"
+import Login from "./src/Pages/Login/Login";
 import Signup from "./src/Pages/Signup/Signup";
 import DashboardLayout from "./src/components/DashboardLayout/DashboardLayout";
 import UpdateListing from "./src/components/UpdateListing/UpdateListing";
-
-
-
 
 const App = () => {
   return (
@@ -31,6 +28,7 @@ const App = () => {
         <Route path="/update-listing/:id" element={<UpdateListing />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/" exact element={<Home />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

@@ -18,7 +18,7 @@ const DashboardLayout = () => {
 
   return (
     <div className="dashboard-layout">
-      <Sidebar />
+      {/* <Sidebar /> */}
       <div className="main-content">
         <div className="header">
           <h2>My Listings</h2>

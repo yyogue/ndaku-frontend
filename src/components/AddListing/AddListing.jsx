@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import "./AddListing.scss";
 
 const AddListing = () => {
-  const [formData, setFormData] = useState({
+  // Initial form state
+  const initialFormState = {
     listerFirstName: "",
     listerLastName: "",
     listerEmailAddress: "",
@@ -25,16 +26,40 @@ const AddListing = () => {
     commune: "",
     district: "",
     ville: "",
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormState);
   const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const navigate = useNavigate();
+  const timeoutRef = useRef();
   const token = useSelector((state) => state.auth.token);
+  const user = useSelector((state) => state.auth.user);
+
+  // Cleanup function
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      // Clean up object URLs
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [imagePreviews]);
+
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setImages([]);
+    setImagePreviews([]);
+    setError("");
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name in formData.details) {
       setFormData((prev) => ({
         ...prev,
@@ -49,96 +74,129 @@ const AddListing = () => {
   };
 
   const handleImageChange = (e) => {
-    setImages(Array.from(e.target.files));
+    const selectedFiles = Array.from(e.target.files);
+    setImages(selectedFiles);
+    const previewUrls = selectedFiles.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previewUrls);
+  };
+
+  const removeImage = (index) => {
+    const updatedImages = [...images];
+    const updatedPreviews = [...imagePreviews];
+    URL.revokeObjectURL(updatedPreviews[index]);
+    updatedImages.splice(index, 1);
+    updatedPreviews.splice(index, 1);
+    setImages(updatedImages);
+    setImagePreviews(updatedPreviews);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = new FormData();
+    setError("");
+    setMessage("");
+    setIsSubmitting(true);
+    setShowSuccess(false);
 
-    // Add form data
-    Object.entries(formData).forEach(([key, value]) => {
-      if (typeof value === "object" && value !== null) {
-        Object.entries(value).forEach(([subKey, subVal]) => {
-          data.append(`details.${subKey}`, subVal);
-        });
-      } else if (key !== "price") {
-        data.append(key, value);
-      }
-    });
-
-    // Add correct price field
-    if (formData.listingType === "sale") {
-      data.append("priceSale", formData.price);
-    } else if (formData.listingType === "rent") {
-      data.append("priceMonthly", formData.price);
-    } else if (formData.listingType === "daily") {
-      data.append("priceDaily", formData.price);
+    if (!token || !user?._id) {
+      setError("Authentication failed. Please log in again.");
+      setIsSubmitting(false);
+      return;
     }
-
-    // Add images
-    images.forEach((file) => {
-      data.append("images", file);
-    });
 
     try {
+      const data = new FormData();
+      const startTime = Date.now();
+
+      // Append form data
+      data.append("listerFirstName", formData.listerFirstName);
+      data.append("listerLastName", formData.listerLastName);
+      data.append("listerEmailAddress", formData.listerEmailAddress);
+      data.append("listerPhoneNumber", formData.listerPhoneNumber);
+      data.append("typeOfListing", formData.typeOfListing);
+      data.append("listingType", formData.listingType);
+      data.append("address", formData.address);
+      data.append("quartier", formData.quartier);
+      data.append("commune", formData.commune);
+      data.append("district", formData.district);
+      data.append("ville", formData.ville);
+      data.append("createdBy", user._id);
+
+      const detailsObj = {
+        floor: parseInt(formData.details.floor) || 0,
+        bedroom: parseInt(formData.details.bedroom) || 0,
+        bathroom: parseInt(formData.details.bathroom) || 0,
+        kitchen: parseInt(formData.details.kitchen) || 0,
+        dinningRoom: parseInt(formData.details.dinningRoom) || 0,
+      };
+      data.append("details", JSON.stringify(detailsObj));
+
+      const priceValue = parseFloat(formData.price) || 0;
+      if (formData.listingType === "sale") {
+        data.append("priceSale", priceValue);
+      } else if (formData.listingType === "rent") {
+        data.append("priceMonthly", priceValue);
+      } else if (formData.listingType === "daily") {
+        data.append("priceDaily", priceValue);
+      }
+
+      if (images.length === 0) {
+        setError("At least one image is required");
+        setIsSubmitting(false);
+        return;
+      }
+      images.forEach((file) => data.append("images", file));
+
+      // Submit data
       await API.post("/listings/add", data, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
       });
 
+      const submissionTime = Date.now() - startTime;
+      const minDisplayTime = 1000;
+      const remainingTime = Math.max(minDisplayTime - submissionTime, 0);
+
+      setShowSuccess(true);
       setMessage("Listing added successfully!");
-      setFormData({
-        listerFirstName: "",
-        listerLastName: "",
-        listerEmailAddress: "",
-        listerPhoneNumber: "",
-        typeOfListing: "",
-        listingType: "",
-        price: "",
-        details: {
-          floor: "",
-          bedroom: "",
-          bathroom: "",
-          kitchen: "",
-          dinningRoom: "",
-        },
-        address: "",
-        quartier: "",
-        commune: "",
-        district: "",
-        ville: "",
-      });
-      setImages([]);
+      resetForm(); // Reset all form values
 
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         navigate("/list-property");
-      }, 1500);
+      }, remainingTime);
+
     } catch (err) {
-      console.error(err);
-      setMessage("Error uploading listing. Please try again.");
+      console.error("Submission Error:", err);
+      setError(
+        err.response?.data?.message ||
+        "Failed to submit listing. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Dynamic label for price
   const getPriceLabel = () => {
     switch (formData.listingType) {
-      case "rent":
-        return "Monthly Rent";
-      case "daily":
-        return "Daily Rent";
-      case "sale":
-        return "Sale Price";
-      default:
-        return "Price";
+      case "rent": return "Monthly Rent";
+      case "daily": return "Daily Rent";
+      case "sale": return "Sale Price";
+      default: return "Price";
     }
   };
+
 
   return (
     <div className="add-listing-container">
       <h2>Add New Listing</h2>
+      
+      {error && <div className="error-message">{error}</div>}
+      
+      {message && showSuccess && (
+        <div className="success-message">{message}</div>
+      )}
+  
       <form onSubmit={handleSubmit} className="listing-form">
         {/* Personal Info */}
         <div className="form-group">
@@ -159,6 +217,7 @@ const AddListing = () => {
             required
           />
         </div>
+        
         <div className="form-group">
           <input
             type="email"
@@ -177,7 +236,7 @@ const AddListing = () => {
             required
           />
         </div>
-
+  
         {/* Type of Listing */}
         <div className="form-group">
           <select
@@ -192,7 +251,7 @@ const AddListing = () => {
             <option value="condo">Condo</option>
           </select>
         </div>
-
+  
         {/* Listing Type and Price */}
         <div className="form-group listing-price">
           <select
@@ -206,7 +265,6 @@ const AddListing = () => {
             <option value="daily">Daily</option>
             <option value="sale">Sale</option>
           </select>
-
           <div className="price-input">
             <span>$</span>
             <input
@@ -219,7 +277,7 @@ const AddListing = () => {
             />
           </div>
         </div>
-
+  
         {/* Details */}
         <div className="form-group details-group">
           <input
@@ -258,7 +316,7 @@ const AddListing = () => {
             onChange={handleChange}
           />
         </div>
-
+  
         {/* Address */}
         <div className="form-group">
           <input
@@ -302,19 +360,47 @@ const AddListing = () => {
             required
           />
         </div>
-
+  
         {/* Image Upload */}
         <div className="form-group">
           <input
             type="file"
+            name="images"
             onChange={handleImageChange}
             multiple
             accept="image/*"
+            required
           />
         </div>
-
-        <button type="submit">Submit</button>
-        {message && <p className="message">{message}</p>}
+  
+        {/* Image Preview */}
+        {imagePreviews.length > 0 && (
+          <div className="preview-group">
+            {imagePreviews.map((src, idx) => (
+              <div key={idx} className="preview-image">
+                <img src={src} alt={`preview-${idx}`} />
+                <button type="button" onClick={() => removeImage(idx)}>
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+  
+        {isSubmitting && (
+          <div className="submission-overlay">
+            <div className="spinner"></div>
+            <p>Submitting your listing...</p>
+          </div>
+        )}
+  
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <span className="button-spinner"></span>
+          ) : (
+            "Submit"
+          )}
+        </button>
       </form>
     </div>
   );

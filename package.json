@@ -1,10 +1,12 @@
 {
   "name": "ndaku-frontend",
   "version": "1.0.0",
+  "homepage": ".",
   "main": "index.js",
   "scripts": {
-    "start": "webpack serve --mode development --open",
-    "build": "webpack --mode production"
+    "start": "webpack serve --mode development --open --history-api-fallback",
+    "build": "webpack --mode production",
+    "serve": "serve -s dist -p 3000"
   },
   "keywords": [],
   "author": "",
@@ -37,9 +39,10 @@
     "babel-loader": "^10.0.0",
     "css-loader": "^7.1.2",
     "html-webpack-plugin": "^5.6.3",
+    "http-server": "^14.1.1",
     "postcss": "^8.5.3",
     "postcss-loader": "^8.1.1",
-    "sass": "^1.86.3",
+    "sass": "^1.87.0",
     "sass-loader": "^16.0.5",
     "style-loader": "^4.0.0",
     "tailwindcss": "^4.1.4",
