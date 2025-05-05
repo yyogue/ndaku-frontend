@@ -2,11 +2,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
-import citiesData from "../../data/citiesData"; // Import the local data
+import citiesData from "../../data/citiesData";
 import "./AddListing.scss";
 
 const AddListing = () => {
-  // Initial form state remains the same
   const initialFormState = {
     lister: {
       firstName: "",
@@ -48,13 +47,12 @@ const AddListing = () => {
   const token = useSelector((state) => state.auth.token);
   const user = useSelector((state) => state.auth.user);
   
-  // Location data states - no longer need loading state since data is local
   const [villes, setVilles] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [communes, setCommunes] = useState([]);
   const [quartiers, setQuartiers] = useState([]);
 
-  // Initialize villes data from local file
+  // Initialize villes data
   useEffect(() => {
     const activeCities = citiesData.filter(city => city.isActive).map(city => city.nom);
     setVilles(activeCities);
@@ -71,7 +69,6 @@ const AddListing = () => {
         setDistricts([]);
       }
       
-      // Reset dependent fields
       setFormData(prev => ({
         ...prev,
         location: {
@@ -103,7 +100,6 @@ const AddListing = () => {
         }
       }
       
-      // Reset dependent fields
       setFormData(prev => ({
         ...prev,
         location: {
@@ -116,6 +112,39 @@ const AddListing = () => {
     }
   }, [formData.location.ville, formData.location.district]);
 
+  // Update quartiers when commune changes
+  useEffect(() => {
+    if (formData.location.ville && formData.location.district && formData.location.commune) {
+      const selectedCity = citiesData.find(city => city.nom === formData.location.ville);
+      
+      if (selectedCity && selectedCity.locationData) {
+        const districtData = selectedCity.locationData.districts.find(
+          d => d.nom === formData.location.district
+        );
+        
+        if (districtData && districtData.communes) {
+          const communeData = districtData.communes.find(
+            c => c.nom === formData.location.commune
+          );
+          
+          if (communeData && communeData.quartiers) {
+            setQuartiers(communeData.quartiers);
+          } else {
+            setQuartiers([]);
+          }
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          quartier: ""
+        }
+      }));
+    }
+  }, [formData.location.commune, formData.location.district, formData.location.ville]);
+
   const resetForm = () => {
     setFormData(initialFormState);
     setImages([]);
@@ -126,7 +155,6 @@ const AddListing = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Handle nested property changes
     if (name.startsWith("lister.")) {
       const field = name.split(".")[1];
       setFormData(prev => ({
@@ -203,7 +231,7 @@ const AddListing = () => {
       const data = new FormData();
       const startTime = Date.now();
 
-      // Append form data with restructured format
+      // Append form data
       data.append("listerFirstName", formData.lister.firstName);
       data.append("listerLastName", formData.lister.lastName);
       data.append("listerEmailAddress", formData.lister.email);
@@ -217,7 +245,6 @@ const AddListing = () => {
       data.append("ville", formData.location.ville);
       data.append("createdBy", user._id);
 
-      // Handle details with parseInt for numeric values
       const detailsObj = {
         floor: parseInt(formData.property.details.floor) || 0,
         bedroom: parseInt(formData.property.details.bedroom) || 0,
@@ -227,7 +254,6 @@ const AddListing = () => {
       };
       data.append("details", JSON.stringify(detailsObj));
 
-      // Handle price based on listing type
       const priceValue = parseFloat(formData.property.price) || 0;
       if (formData.property.listingType === "sale") {
         data.append("priceSale", priceValue);
@@ -237,17 +263,14 @@ const AddListing = () => {
         data.append("priceDaily", priceValue);
       }
 
-      // Validate images
       if (images.length === 0) {
         setError("At least one image is required");
         setIsSubmitting(false);
         return;
       }
       
-      // Append image files
       images.forEach((file) => data.append("images", file));
 
-      // Submit data
       const response = await API.post("/listings/add", data, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -255,7 +278,6 @@ const AddListing = () => {
         },
       });
 
-      // Handle successful submission with minimum display time
       const submissionTime = Date.now() - startTime;
       const minDisplayTime = 1000;
       const remainingTime = Math.max(minDisplayTime - submissionTime, 0);
@@ -264,7 +286,6 @@ const AddListing = () => {
       setMessage("Listing added successfully!");
       resetForm(); 
 
-      // Redirect after showing success message
       timeoutRef.current = setTimeout(() => {
         navigate("/list-property");
       }, remainingTime);
@@ -300,7 +321,6 @@ const AddListing = () => {
       )}
   
       <form onSubmit={handleSubmit} className="listing-form">
-        {/* Personal Info Section */}
         <section className="form-section">
           <h3>Contact Information</h3>
           <div className="form-group">
@@ -342,7 +362,6 @@ const AddListing = () => {
           </div>
         </section>
   
-        {/* Property Details Section */}
         <section className="form-section">
           <h3>Property Details</h3>
           <div className="form-group">
@@ -356,12 +375,11 @@ const AddListing = () => {
               <option value="apartment">Apartment</option>
               <option value="house">House</option>
               <option value="condo">Condo</option>
-              <option value="office">Office Space</option>
-              <option value="land">Land</option>
+              {/* <option value="office">Office Space</option> */}
+              {/* <option value="land">Land</option> */}
             </select>
           </div>
       
-          {/* Listing Type and Price */}
           <div className="form-group listing-price">
             <select
               name="property.listingType"
@@ -387,7 +405,6 @@ const AddListing = () => {
             </div>
           </div>
       
-          {/* Property Features */}
           <div className="form-group details-group">
             <input
               type="number"
@@ -432,7 +449,6 @@ const AddListing = () => {
           </div>
         </section>
   
-        {/* Location Section */}
         <section className="form-section">
           <h3>Location</h3>
           <div className="form-group">
@@ -445,7 +461,6 @@ const AddListing = () => {
               required
             />
             
-            {/* Location Selection */}
             <select
               name="location.ville"
               value={formData.location.ville}
@@ -508,7 +523,6 @@ const AddListing = () => {
           </div>
         </section>
   
-        {/* Image Upload Section */}
         <section className="form-section">
           <h3>Property Images</h3>
           <div className="form-group">
@@ -526,7 +540,6 @@ const AddListing = () => {
             <small>You can select multiple images (max 10)</small>
           </div>
       
-          {/* Image Preview */}
           {imagePreviews.length > 0 && (
             <div className="preview-group">
               {imagePreviews.map((src, idx) => (
@@ -545,7 +558,6 @@ const AddListing = () => {
           )}
         </section>
   
-        {/* Loading Spinner */}
         {isSubmitting && (
           <div className="submission-overlay">
             <div className="spinner"></div>
@@ -553,7 +565,6 @@ const AddListing = () => {
           </div>
         )}
   
-        {/* Submit Button */}
         <button 
           type="submit" 
           className="submit-button"
