@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../../services/api";
+import citiesData from "../../data/citiesData";
 import "./UpdateListing.scss";
 
 const UpdateListing = ({ listing, onClose, onSave }) => {
@@ -37,78 +38,221 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
   const navigate = useNavigate();
   const token = useSelector((state) => state.auth.token);
 
+  // Location dropdown states
+  const [villes, setVilles] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [communes, setCommunes] = useState([]);
+  const [quartiers, setQuartiers] = useState([]);
+
+  // Initialize villes data
+  useEffect(() => {
+    const activeCities = citiesData.filter(city => city.isActive).map(city => city.nom);
+    setVilles(activeCities);
+  }, []);
+
+  // Update districts when city changes
+  useEffect(() => {
+    if (formData.ville) {
+      const selectedCity = citiesData.find(city => city.nom === formData.ville);
+      
+      if (selectedCity && selectedCity.locationData) {
+        setDistricts(selectedCity.locationData.districts.map(d => d.nom));
+        
+        // Check if current district is still valid for this city
+        const isDistrictValid = selectedCity.locationData.districts.some(d => d.nom === formData.district);
+        
+        if (!isDistrictValid) {
+          // If district is invalid, reset dependent fields
+          setFormData(prev => ({
+            ...prev,
+            district: "",
+            commune: "",
+            quartier: ""
+          }));
+          setCommunes([]);
+          setQuartiers([]);
+        }
+      } else {
+        setDistricts([]);
+      }
+    } else {
+      // If no city selected, reset all dependent fields
+      setDistricts([]);
+      setCommunes([]);
+      setQuartiers([]);
+      setFormData(prev => ({
+        ...prev,
+        district: "",
+        commune: "",
+        quartier: ""
+      }));
+    }
+  }, [formData.ville]);
+
+  // Update communes when district changes
+  useEffect(() => {
+    if (formData.ville && formData.district) {
+      const selectedCity = citiesData.find(city => city.nom === formData.ville);
+      
+      if (selectedCity && selectedCity.locationData) {
+        const districtData = selectedCity.locationData.districts.find(
+          d => d.nom === formData.district
+        );
+        
+        if (districtData && districtData.communes) {
+          setCommunes(districtData.communes.map(c => c.nom));
+          
+          // Check if current commune is still valid for this district
+          const isCommuneValid = districtData.communes.some(c => c.nom === formData.commune);
+          
+          if (!isCommuneValid) {
+            // If commune is invalid, reset dependent fields
+            setFormData(prev => ({
+              ...prev,
+              commune: "",
+              quartier: ""
+            }));
+            setQuartiers([]);
+          }
+        } else {
+          setCommunes([]);
+        }
+      }
+    } else if (formData.district === "") {
+      // If district is cleared, reset dependent fields
+      setCommunes([]);
+      setQuartiers([]);
+      setFormData(prev => ({
+        ...prev,
+        commune: "",
+        quartier: ""
+      }));
+    }
+  }, [formData.district, formData.ville]);
+
+  // Update quartiers when commune changes
+  useEffect(() => {
+    if (formData.ville && formData.district && formData.commune) {
+      const selectedCity = citiesData.find(city => city.nom === formData.ville);
+      
+      if (selectedCity && selectedCity.locationData) {
+        const districtData = selectedCity.locationData.districts.find(
+          d => d.nom === formData.district
+        );
+        
+        if (districtData && districtData.communes) {
+          const communeData = districtData.communes.find(
+            c => c.nom === formData.commune
+          );
+          
+          if (communeData && communeData.quartiers) {
+            setQuartiers(communeData.quartiers);
+            
+            // Check if current quartier is still valid for this commune
+            const isQuartierValid = communeData.quartiers.includes(formData.quartier);
+            
+            if (!isQuartierValid) {
+              // If quartier is invalid, reset it
+              setFormData(prev => ({
+                ...prev,
+                quartier: ""
+              }));
+            }
+          } else {
+            setQuartiers([]);
+          }
+        }
+      }
+    } else if (formData.commune === "") {
+      // If commune is cleared, reset quartier
+      setQuartiers([]);
+      setFormData(prev => ({
+        ...prev,
+        quartier: ""
+      }));
+    }
+  }, [formData.commune, formData.district, formData.ville]);
+
+  // Load listing data
   useEffect(() => {
     const fetchListing = async () => {
       try {
         setLoading(true);
         setMessage({ text: "", type: "" });
 
+        let listingData;
         if (listing) {
-          // If listing is passed as prop (from Listings component)
-          const inferredPrice = listing.priceMonthly || listing.priceDaily || listing.priceSale || "";
-
-          setFormData({
-            listerFirstName: listing.listerFirstName || "",
-            listerLastName: listing.listerLastName || "",
-            listerEmailAddress: listing.listerEmailAddress || "",
-            listerPhoneNumber: listing.listerPhoneNumber || "",
-            typeOfListing: listing.typeOfListing?.toLowerCase() || "",
-            listingType: listing.listingType?.toLowerCase() || "",
-            price: inferredPrice.toString(),
-            details: {
-              floor: listing.details?.floor || "",
-              bedroom: listing.details?.bedroom || "",
-              bathroom: listing.details?.bathroom || "",
-              kitchen: listing.details?.kitchen || "",
-              dinningRoom: listing.details?.dinningRoom || "",
-            },
-            address: listing.address || "",
-            quartier: listing.quartier || "",
-            commune: listing.commune || "",
-            district: listing.district || "",
-            ville: listing.ville || "",
-          });
-          setExistingImages(listing.images || []);
-          setLoading(false);
+          listingData = listing;
         } else if (id) {
-          // If no listing prop, fetch from API
           const response = await API.get(`/listings/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-
-          if (!response.data) {
-            throw new Error("Received empty response from server");
-          }
-
-          const listingData = response.data;
-          const inferredPrice = listingData.priceMonthly || listingData.priceDaily || listingData.priceSale || "";
-
-          setFormData({
-            listerFirstName: listingData.listerFirstName || "",
-            listerLastName: listingData.listerLastName || "",
-            listerEmailAddress: listingData.listerEmailAddress || "",
-            listerPhoneNumber: listingData.listerPhoneNumber || "",
-            typeOfListing: listingData.typeOfListing?.toLowerCase() || "",
-            listingType: listingData.listingType?.toLowerCase() || "",
-            price: inferredPrice.toString(),
-            details: {
-              floor: listingData.details?.floor || "",
-              bedroom: listingData.details?.bedroom || "",
-              bathroom: listingData.details?.bathroom || "",
-              kitchen: listingData.details?.kitchen || "",
-              dinningRoom: listingData.details?.dinningRoom || "",
-            },
-            address: listingData.address || "",
-            quartier: listingData.quartier || "",
-            commune: listingData.commune || "",
-            district: listingData.district || "",
-            ville: listingData.ville || "",
-          });
-          setExistingImages(listingData.images || []);
-          setLoading(false);
+          listingData = response.data;
         } else {
           throw new Error("No listing ID provided");
         }
+
+        const inferredPrice = listingData.priceMonthly || listingData.priceDaily || listingData.priceSale || "";
+
+        // Set form data
+        setFormData({
+          listerFirstName: listingData.listerFirstName || "",
+          listerLastName: listingData.listerLastName || "",
+          listerEmailAddress: listingData.listerEmailAddress || "",
+          listerPhoneNumber: listingData.listerPhoneNumber || "",
+          typeOfListing: listingData.typeOfListing?.toLowerCase() || "",
+          listingType: listingData.listingType?.toLowerCase() || "",
+          price: inferredPrice.toString(),
+          details: {
+            floor: listingData.details?.floor || "",
+            bedroom: listingData.details?.bedroom || "",
+            bathroom: listingData.details?.bathroom || "",
+            kitchen: listingData.details?.kitchen || "",
+            dinningRoom: listingData.details?.dinningRoom || "",
+          },
+          address: listingData.address || "",
+          quartier: listingData.quartier || "",
+          commune: listingData.commune || "",
+          district: listingData.district || "",
+          ville: listingData.ville || "",
+        });
+
+        setExistingImages(listingData.images || []);
+        
+        // Initialize location data manually to ensure correct cascading
+        if (listingData.ville) {
+          const selectedCity = citiesData.find(city => city.nom === listingData.ville);
+          if (selectedCity?.locationData) {
+            // Set districts
+            const cityDistricts = selectedCity.locationData.districts.map(d => d.nom);
+            setDistricts(cityDistricts);
+            
+            // Set communes if district exists
+            if (listingData.district) {
+              const districtData = selectedCity.locationData.districts.find(
+                d => d.nom === listingData.district
+              );
+              
+              if (districtData?.communes) {
+                const districtCommunes = districtData.communes.map(c => c.nom);
+                setCommunes(districtCommunes);
+                
+                // Set quartiers if commune exists
+                if (listingData.commune) {
+                  const communeData = districtData.communes.find(
+                    c => c.nom === listingData.commune
+                  );
+                  
+                  if (communeData?.quartiers) {
+                    setQuartiers(communeData.quartiers);
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        setLoading(false);
       } catch (error) {
         console.error("Fetch error:", error);
         setMessage({
@@ -359,38 +503,85 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               onChange={handleChange}
               required
             />
-            <input
-              type="text"
-              name="quartier"
-              placeholder="Neighborhood"
-              value={formData.quartier}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="commune"
-              placeholder="Commune"
-              value={formData.commune}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="district"
-              placeholder="District"
-              value={formData.district}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
+            
+            <select
               name="ville"
-              placeholder="City"
               value={formData.ville}
               onChange={handleChange}
               required
-            />
+            >
+              <option value="">Select City</option>
+              {villes.map((ville) => (
+                <option key={ville} value={ville}>
+                  {ville}
+                </option>
+              ))}
+              {formData.ville && !villes.includes(formData.ville) && (
+                <option value={formData.ville}>
+                  {formData.ville} (Current)
+                </option>
+              )}
+            </select>
+            
+            <select
+              name="district"
+              value={formData.district}
+              onChange={handleChange}
+              required
+              disabled={!formData.ville}
+            >
+              <option value="">Select District</option>
+              {districts.map((district) => (
+                <option key={district} value={district}>
+                  {district}
+                </option>
+              ))}
+              {formData.district && !districts.includes(formData.district) && (
+                <option value={formData.district}>
+                  {formData.district} (Current)
+                </option>
+              )}
+            </select>
+            
+            <select
+              name="commune"
+              value={formData.commune}
+              onChange={handleChange}
+              required
+              disabled={!formData.district}
+            >
+              <option value="">Select Commune</option>
+              {communes.map((commune) => (
+                <option key={commune} value={commune}>
+                  {commune}
+                </option>
+              ))}
+              {formData.commune && !communes.includes(formData.commune) && (
+                <option value={formData.commune}>
+                  {formData.commune} (Current)
+                </option>
+              )}
+            </select>
+            
+            <select
+              name="quartier"
+              value={formData.quartier}
+              onChange={handleChange}
+              required
+              disabled={!formData.commune}
+            >
+              <option value="">Select Quartier</option>
+              {quartiers.map((quartier) => (
+                <option key={quartier} value={quartier}>
+                  {quartier}
+                </option>
+              ))}
+              {formData.quartier && !quartiers.includes(formData.quartier) && (
+                <option value={formData.quartier}>
+                  {formData.quartier} (Current)
+                </option>
+              )}
+            </select>
           </div>
         </div>
 
@@ -472,3 +663,4 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
 };
 
 export default UpdateListing;
+

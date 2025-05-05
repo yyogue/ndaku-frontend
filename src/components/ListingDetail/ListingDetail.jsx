@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "./ListingDetail.scss";
 
-// Fix for Leaflet icon issue
+// Fix for Leaflet icon issues
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -26,8 +26,9 @@ const ListingDetail = () => {
   const [showModal, setShowModal] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [relatedListings, setRelatedListings] = useState([]);
-  const [position, setPosition] = useState([-4.4419, 15.2663]); // Default Kinshasa coordinates
+  const [position, setPosition] = useState([-4.3276, 15.3136]); // Default to Kinshasa center
   const [geocodeError, setGeocodeError] = useState(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -49,13 +50,13 @@ const ListingDetail = () => {
           setDaysRemaining(daysDiff > 0 ? daysDiff : 0);
         }
 
-        // Geocode the address to get coordinates
-        geocodeAddress(listingData);
-
+        await geocodeAddress(listingData);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching listing:", err);
-        setError("Failed to load the property details. Please try again later.");
+        setError(
+          "Failed to load the property details. Please try again later."
+        );
         setLoading(false);
       }
     };
@@ -83,41 +84,64 @@ const ListingDetail = () => {
           throw new Error("No address provided");
         }
 
-        // Construct full address string
-        const fullAddress = `${listingData.address}, ${listingData.quartier}, ${listingData.commune}, ${listingData.district}, ${listingData.ville}, DR Congo`;
+        // Try Google Maps API if available
+        if (process.env.REACT_APP_GOOGLE_MAPS_API_KEY) {
+          try {
+            const response = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+                `${listingData.address}, ${listingData.quartier}, ${listingData.commune}, DR Congo`
+              )}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+            );
 
-        // Use OpenStreetMap Nominatim API for geocoding
+            const data = await response.json();
+
+            if (data.status === "OK" && data.results.length > 0) {
+              const { lat, lng } = data.results[0].geometry.location;
+              setPosition([lat, lng]);
+              setGeocodeError(null);
+              setMapLoaded(true);
+              return;
+            }
+          } catch (err) {
+            console.log("Google Geocoding failed, falling back to OSM");
+          }
+        }
+
+        // Fallback to OpenStreetMap
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            `${listingData.address}, ${listingData.quartier}, ${listingData.commune}, DR Congo`
+          )}`
         );
-        
+
         const data = await response.json();
-        
+
         if (data && data.length > 0) {
           const { lat, lon } = data[0];
           setPosition([parseFloat(lat), parseFloat(lon)]);
           setGeocodeError(null);
+          setMapLoaded(true);
         } else {
           throw new Error("Address not found");
         }
       } catch (err) {
         console.error("Geocoding error:", err);
-        setGeocodeError("Could not pinpoint exact location. Showing approximate area.");
-        // Fall back to district-level coordinates if available
+        setGeocodeError(
+          "Could not pinpoint exact location. Showing approximate area."
+        );
         setPosition(getDistrictCoordinates(listingData.district));
+        setMapLoaded(true);
       }
     };
 
     const getDistrictCoordinates = (district) => {
-      // Default coordinates for Kinshasa districts
       const districtCoordinates = {
-        "Funa": [-4.4419, 15.2663], // Central Kinshasa
-        "Lukunga": [-4.3317, 15.2667], // Western Kinshasa
-        "Mont Amba": [-4.3833, 15.3333], // Southern Kinshasa
-        "Tshangu": [-4.4167, 15.4167], // Eastern Kinshasa
+        Funa: [-4.3276, 15.3136], // Gombe area
+        Lukunga: [-4.3317, 15.2667], // Ngaliema
+        "Mont Amba": [-4.3833, 15.3333], // Lemba/Limete
+        Tshangu: [-4.4167, 15.4167], // Masina/Ndjili
       };
-      
-      return districtCoordinates[district] || [-4.4419, 15.2663]; // Default to central Kinshasa
+      return districtCoordinates[district] || [-4.3276, 15.3136];
     };
 
     if (id) {
@@ -148,25 +172,23 @@ const ListingDetail = () => {
     setShowModal(true);
   };
 
-  const closeImageModal = () => {
+  const closeImageModal = (e) => {
+    e.stopPropagation();
     setShowModal(false);
   };
 
   const getFeatureIcon = (feature) => {
-    switch (feature) {
-      case "bedroom":
-        return "fas fa-bed";
-      case "bathroom":
-        return "fas fa-bath";
-      case "kitchen":
-        return "fas fa-utensils";
-      case "dinningRoom":
-        return "fas fa-chair";
-      case "floor":
-        return "fas fa-building";
-      default:
-        return "fas fa-home";
-    }
+    const icons = {
+      bedroom: "fas fa-bed",
+      bathroom: "fas fa-bath",
+      kitchen: "fas fa-utensils",
+      dinningRoom: "fas fa-chair",
+      floor: "fas fa-building",
+      parking: "fas fa-car",
+      garden: "fas fa-tree",
+      wifi: "fas fa-wifi",
+    };
+    return icons[feature] || "fas fa-home";
   };
 
   if (loading) {
@@ -211,11 +233,11 @@ const ListingDetail = () => {
 
   return (
     <div className="listing-detail-container">
-      {/* Header with Property Images */}
+      {/* Image Gallery Section */}
       <div className="listing-header">
         <div className="image-gallery">
           <div className="main-image-container">
-            {listing.images && listing.images.length > 0 && (
+            {listing.images?.length > 0 && (
               <>
                 <img
                   src={listing.images[activeImageIndex]}
@@ -228,14 +250,12 @@ const ListingDetail = () => {
                     <button
                       className="gallery-nav prev"
                       onClick={handlePrevImage}
-                      aria-label="Previous image"
                     >
                       <i className="fas fa-chevron-left"></i>
                     </button>
                     <button
                       className="gallery-nav next"
                       onClick={handleNextImage}
-                      aria-label="Next image"
                     >
                       <i className="fas fa-chevron-right"></i>
                     </button>
@@ -256,7 +276,7 @@ const ListingDetail = () => {
             )}
           </div>
 
-          {listing.images && listing.images.length > 1 && (
+          {listing.images?.length > 1 && (
             <div className="thumbnail-container">
               {listing.images.slice(0, 5).map((image, index) => (
                 <div
@@ -269,7 +289,7 @@ const ListingDetail = () => {
                   <img src={image} alt={`Thumbnail ${index + 1}`} />
                   {index === 4 && listing.images.length > 5 && (
                     <div className="more-photos">
-                      <span>+{listing.images.length - 5}</span>
+                      +{listing.images.length - 5}
                     </div>
                   )}
                 </div>
@@ -279,10 +299,10 @@ const ListingDetail = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="listing-content">
         <div className="listing-main">
-          {/* Property Title and Basic Info */}
+          {/* Property Header */}
           <div className="listing-title-section">
             <h1>
               {listing.typeOfListing} for{" "}
@@ -312,7 +332,15 @@ const ListingDetail = () => {
             )}
           </div>
 
-          {/* Property Features */}
+          {/* Property Description */}
+          {listing.description && (
+            <div className="listing-description">
+              <h2>Description</h2>
+              <p>{listing.description}</p>
+            </div>
+          )}
+
+          {/* Features Section */}
           <div className="listing-features-section">
             <h2>Property Features</h2>
             <div className="features-grid">
@@ -348,36 +376,51 @@ const ListingDetail = () => {
               </div>
             )}
             <div className="map-container">
-              <MapContainer
-                center={position}
-                zoom={15}
-                scrollWheelZoom={false}
-                style={{ height: "400px", width: "100%" }}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={position}>
-                  <Popup>
-                    <strong>{listing.typeOfListing}</strong><br />
-                    {listing.address}<br />
-                    {listing.quartier}, {listing.commune}
-                  </Popup>
-                </Marker>
-              </MapContainer>
+              {mapLoaded && (
+                <MapContainer
+                  center={position}
+                  zoom={15}
+                  scrollWheelZoom={false}
+                  style={{ height: "400px", width: "100%" }}
+                  key={`${position[0]}-${position[1]}`}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={position}>
+                    <Popup>
+                      <strong>{listing.typeOfListing}</strong>
+                      <br />
+                      {listing.address}
+                      <br />
+                      {listing.quartier}, {listing.commune}
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              )}
+            </div>
+            <div className="map-disclaimer">
+              <small>
+                Note: Map shows approximate location. For precise directions,
+                contact the lister.
+              </small>
             </div>
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="listing-sidebar">
-          {/* Contact Information */}
+          {/* Contact Card */}
           <div className="contact-card">
             <h3>Contact Information</h3>
             <div className="lister-info">
               <div className="lister-avatar">
-                <i className="fas fa-user-circle"></i>
+                {listing.listerProfileImage ? (
+                  <img src={listing.listerProfileImage} alt="Lister" />
+                ) : (
+                  <i className="fas fa-user-circle"></i>
+                )}
               </div>
               <div className="lister-details">
                 <h4>
@@ -390,11 +433,15 @@ const ListingDetail = () => {
             <div className="contact-details">
               <div className="contact-item">
                 <i className="fas fa-phone"></i>
-                <span>{listing.listerPhoneNumber}</span>
+                <a href={`tel:${listing.listerPhoneNumber}`}>
+                  {listing.listerPhoneNumber}
+                </a>
               </div>
               <div className="contact-item">
                 <i className="fas fa-envelope"></i>
-                <span>{listing.listerEmailAddress}</span>
+                <a href={`mailto:${listing.listerEmailAddress}`}>
+                  {listing.listerEmailAddress}
+                </a>
               </div>
             </div>
 
@@ -414,74 +461,66 @@ const ListingDetail = () => {
             </div>
           </div>
 
-          {/* Save Listing Card */}
-          <div className="save-listing-card">
-            <button className="save-listing-button">
-              <i className="far fa-heart"></i> Save to Favorites
-            </button>
-            <button className="share-listing-button">
-              <i className="fas fa-share-alt"></i> Share Property
-            </button>
-          </div>
+          {/* Action Buttons */}
         </div>
       </div>
 
-      {/* Related Listings Section */}
+      {/* Related Listings */}
       {relatedListings.length > 0 && (
         <div className="related-listings-section">
           <h2>Similar Properties</h2>
           <div className="related-listings-grid">
-            {relatedListings.map((listing) => {
-              const listingPrice =
-                listing.listingType === "rent"
-                  ? listing.priceMonthly
-                  : listing.listingType === "sale"
-                  ? listing.priceSale
-                  : listing.listingType === "daily"
-                  ? listing.priceDaily
+            {relatedListings.map((relatedListing) => {
+              const relatedPrice =
+                relatedListing.listingType === "rent"
+                  ? relatedListing.priceMonthly
+                  : relatedListing.listingType === "sale"
+                  ? relatedListing.priceSale
+                  : relatedListing.listingType === "daily"
+                  ? relatedListing.priceDaily
                   : 0;
 
-              const listingPriceDisplay =
-                listing.listingType === "rent"
-                  ? `$${listingPrice?.toLocaleString()}/mo`
-                  : listing.listingType === "sale"
-                  ? `$${listingPrice?.toLocaleString()}`
-                  : listing.listingType === "daily"
-                  ? `$${listingPrice?.toLocaleString()}/day`
+              const relatedPriceDisplay =
+                relatedListing.listingType === "rent"
+                  ? `$${relatedPrice?.toLocaleString()}/mo`
+                  : relatedListing.listingType === "sale"
+                  ? `$${relatedPrice?.toLocaleString()}`
+                  : relatedListing.listingType === "daily"
+                  ? `$${relatedPrice?.toLocaleString()}/day`
                   : "";
 
               return (
-                <div className="related-listing-card" key={listing._id}>
+                <div className="related-listing-card" key={relatedListing._id}>
                   <div className="related-listing-image">
-                    {listing.images && listing.images.length > 0 && (
+                    {relatedListing.images?.length > 0 && (
                       <img
-                        src={listing.images[0]}
-                        alt={listing.typeOfListing}
+                        src={relatedListing.images[0]}
+                        alt={relatedListing.typeOfListing}
                         loading="lazy"
                       />
                     )}
                   </div>
                   <div className="related-listing-info">
-                    <h3>{listing.typeOfListing}</h3>
+                    <h3>{relatedListing.typeOfListing}</h3>
                     <p className="related-listing-location">
                       <i className="fas fa-map-marker-alt"></i>{" "}
-                      {listing.address}, {listing.commune}
+                      {relatedListing.commune}
                     </p>
                     <div className="related-listing-features">
                       <span>
                         <i className="fas fa-bed"></i>{" "}
-                        {listing.details?.bedroom || 0}
+                        {relatedListing.details?.bedroom || 0}
                       </span>
                       <span>
                         <i className="fas fa-bath"></i>{" "}
-                        {listing.details?.bathroom || 0}
+                        {relatedListing.details?.bathroom || 0}
                       </span>
                     </div>
                     <div className="related-listing-price">
-                      {listingPriceDisplay}
+                      {relatedPriceDisplay}
                     </div>
                     <Link
-                      to={`/listing/${listing._id}`}
+                      to={`/listing/${relatedListing._id}`}
                       className="view-details-button"
                     >
                       View Details
@@ -494,7 +533,7 @@ const ListingDetail = () => {
         </div>
       )}
 
-      {/* Full-screen Image Modal */}
+      {/* Image Modal */}
       {showModal && (
         <div className="image-modal" onClick={closeImageModal}>
           <button className="modal-close" onClick={closeImageModal}>
