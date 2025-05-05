@@ -6,11 +6,11 @@ import UpdateListing from "../../components/UpdateListing/UpdateListing";
 import ConfirmDialog from "./confimDialog/ConfirmDialog";
 import "./Listings.scss";
 
-const Listings = () => {
+const Listings = ({ onAddListingClick }) => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [currentListing, setCurrentListing] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmAction, setConfirmAction] = useState(() => {});
@@ -45,7 +45,7 @@ const Listings = () => {
 
   const handleEdit = (listing) => {
     setCurrentListing(listing);
-    setShowModal(true);
+    setShowEditModal(true);
   };
 
   const handleDelete = (listingId) => {
@@ -110,9 +110,12 @@ const Listings = () => {
       {listings.length === 0 ? (
         <div className="no-listings">
           <p>Vous n'avez pas encore créé d'annonces.</p>
-          <a href="/add-listing" className="create-listing-btn">
+          <button 
+            className="create-listing-btn"
+            onClick={onAddListingClick}
+          >
             Créer votre première annonce
-          </a>
+          </button>
         </div>
       ) : (
         <div className="listings-grid">
@@ -208,11 +211,11 @@ const Listings = () => {
         </div>
       )}
 
-      {showModal && (
-        <ModalWrapper onClose={() => setShowModal(false)}>
+      {showEditModal && (
+        <ModalWrapper onClose={() => setShowEditModal(false)}>
           <UpdateListing
             listing={currentListing}
-            onClose={() => setShowModal(false)}
+            onClose={() => setShowEditModal(false)}
             onSave={async (updatedListing) => {
               if (updatedListing._id) {
                 const formData = new FormData();
@@ -263,7 +266,7 @@ const Listings = () => {
                   );
                 }
               }
-              setShowModal(false);
+              setShowEditModal(false);
             }}
           />
         </ModalWrapper>

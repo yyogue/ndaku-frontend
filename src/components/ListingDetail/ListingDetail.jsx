@@ -26,12 +26,8 @@ const ListingDetail = () => {
   const [showModal, setShowModal] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [relatedListings, setRelatedListings] = useState([]);
-  const [position, setPosition] = useState([0, 0]);
-
-  // Placeholder location coordinates - you'd ideally get these from geocoding the address
-  const getDefaultPosition = () => {
-    return [48.8566, 2.3522]; // Paris coordinates as fallback
-  };
+  const [position, setPosition] = useState([-4.4419, 15.2663]); // Default Kinshasa coordinates
+  const [geocodeError, setGeocodeError] = useState(null);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -41,12 +37,10 @@ const ListingDetail = () => {
         const listingData = response.data;
         setListing(listingData);
 
-        // If response.data is empty or null
         if (!response.data) {
           throw new Error("Listing data not found");
         }
 
-        // Calculate days remaining until expiry
         if (listingData.expiryDate) {
           const today = new Date();
           const expiryDate = new Date(listingData.expiryDate);
@@ -55,29 +49,24 @@ const ListingDetail = () => {
           setDaysRemaining(daysDiff > 0 ? daysDiff : 0);
         }
 
-        // Set map position - In a real implementation, you would geocode the address
-        // Here we're using placeholder coordinates
-        setPosition(getDefaultPosition());
+        // Geocode the address to get coordinates
+        geocodeAddress(listingData);
 
         setLoading(false);
       } catch (err) {
         console.error("Error fetching listing:", err);
-        setError(
-          "Failed to load the property details. Please try again later."
-        );
+        setError("Failed to load the property details. Please try again later.");
         setLoading(false);
       }
     };
 
     const fetchRelatedListings = async () => {
       try {
-        // This would ideally fetch listings with similar parameters
         const response = await API.get("/listings");
         const allListings = Array.isArray(response.data)
           ? response.data
           : response.data?.data || response.data?.listings || [];
 
-        // Filter out the current listing and limit to 3 related listings
         const related = allListings
           .filter((item) => item._id !== id)
           .slice(0, 3);
@@ -86,6 +75,49 @@ const ListingDetail = () => {
       } catch (err) {
         console.error("Error fetching related listings:", err);
       }
+    };
+
+    const geocodeAddress = async (listingData) => {
+      try {
+        if (!listingData.address) {
+          throw new Error("No address provided");
+        }
+
+        // Construct full address string
+        const fullAddress = `${listingData.address}, ${listingData.quartier}, ${listingData.commune}, ${listingData.district}, ${listingData.ville}, DR Congo`;
+
+        // Use OpenStreetMap Nominatim API for geocoding
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`
+        );
+        
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const { lat, lon } = data[0];
+          setPosition([parseFloat(lat), parseFloat(lon)]);
+          setGeocodeError(null);
+        } else {
+          throw new Error("Address not found");
+        }
+      } catch (err) {
+        console.error("Geocoding error:", err);
+        setGeocodeError("Could not pinpoint exact location. Showing approximate area.");
+        // Fall back to district-level coordinates if available
+        setPosition(getDistrictCoordinates(listingData.district));
+      }
+    };
+
+    const getDistrictCoordinates = (district) => {
+      // Default coordinates for Kinshasa districts
+      const districtCoordinates = {
+        "Funa": [-4.4419, 15.2663], // Central Kinshasa
+        "Lukunga": [-4.3317, 15.2667], // Western Kinshasa
+        "Mont Amba": [-4.3833, 15.3333], // Southern Kinshasa
+        "Tshangu": [-4.4167, 15.4167], // Eastern Kinshasa
+      };
+      
+      return districtCoordinates[district] || [-4.4419, 15.2663]; // Default to central Kinshasa
     };
 
     if (id) {
@@ -159,7 +191,6 @@ const ListingDetail = () => {
     );
   }
 
-  // Calculate price based on listing type
   const price =
     listing.listingType === "rent"
       ? listing.priceMonthly
@@ -311,10 +342,15 @@ const ListingDetail = () => {
           {/* Map Section */}
           <div className="listing-map-section">
             <h2>Location</h2>
+            {geocodeError && (
+              <div className="map-warning">
+                <i className="fas fa-exclamation-triangle"></i> {geocodeError}
+              </div>
+            )}
             <div className="map-container">
               <MapContainer
                 center={position}
-                zoom={13}
+                zoom={15}
                 scrollWheelZoom={false}
                 style={{ height: "400px", width: "100%" }}
               >
@@ -324,7 +360,9 @@ const ListingDetail = () => {
                 />
                 <Marker position={position}>
                   <Popup>
-                    {listing.address}, {listing.commune}
+                    <strong>{listing.typeOfListing}</strong><br />
+                    {listing.address}<br />
+                    {listing.quartier}, {listing.commune}
                   </Popup>
                 </Marker>
               </MapContainer>
@@ -376,7 +414,7 @@ const ListingDetail = () => {
             </div>
           </div>
 
-          {/* Save Listing Card - This would be linked to a user account system */}
+          {/* Save Listing Card */}
           <div className="save-listing-card">
             <button className="save-listing-button">
               <i className="far fa-heart"></i> Save to Favorites

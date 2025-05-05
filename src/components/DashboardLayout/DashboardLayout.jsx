@@ -27,7 +27,7 @@ const DashboardLayout = () => {
           </button>
         </div>
 
-        <Listings />
+        <Listings onAddListingClick={handleAddListing} />
 
         {showModal && (
           <ModalWrapper onClose={handleCloseModal}>
