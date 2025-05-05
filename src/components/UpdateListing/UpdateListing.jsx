@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import API from "../../services/api";
 import "./UpdateListing.scss";
 
-const UpdateListing = () => {
+const UpdateListing = ({ listing, onClose, onSave }) => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -38,75 +38,89 @@ const UpdateListing = () => {
   const token = useSelector((state) => state.auth.token);
 
   useEffect(() => {
-    let isMounted = true;
-
     const fetchListing = async () => {
       try {
-        if (!id || !token) {
-          throw new Error("Missing required parameters");
-        }
-
         setLoading(true);
         setMessage({ text: "", type: "" });
 
-        const response = await API.get(`/listings/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (listing) {
+          // If listing is passed as prop (from Listings component)
+          const inferredPrice = listing.priceMonthly || listing.priceDaily || listing.priceSale || "";
 
-        if (!isMounted) return;
+          setFormData({
+            listerFirstName: listing.listerFirstName || "",
+            listerLastName: listing.listerLastName || "",
+            listerEmailAddress: listing.listerEmailAddress || "",
+            listerPhoneNumber: listing.listerPhoneNumber || "",
+            typeOfListing: listing.typeOfListing?.toLowerCase() || "",
+            listingType: listing.listingType?.toLowerCase() || "",
+            price: inferredPrice.toString(),
+            details: {
+              floor: listing.details?.floor || "",
+              bedroom: listing.details?.bedroom || "",
+              bathroom: listing.details?.bathroom || "",
+              kitchen: listing.details?.kitchen || "",
+              dinningRoom: listing.details?.dinningRoom || "",
+            },
+            address: listing.address || "",
+            quartier: listing.quartier || "",
+            commune: listing.commune || "",
+            district: listing.district || "",
+            ville: listing.ville || "",
+          });
+          setExistingImages(listing.images || []);
+          setLoading(false);
+        } else if (id) {
+          // If no listing prop, fetch from API
+          const response = await API.get(`/listings/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        if (!response.data) {
-          throw new Error("Received empty response from server");
+          if (!response.data) {
+            throw new Error("Received empty response from server");
+          }
+
+          const listingData = response.data;
+          const inferredPrice = listingData.priceMonthly || listingData.priceDaily || listingData.priceSale || "";
+
+          setFormData({
+            listerFirstName: listingData.listerFirstName || "",
+            listerLastName: listingData.listerLastName || "",
+            listerEmailAddress: listingData.listerEmailAddress || "",
+            listerPhoneNumber: listingData.listerPhoneNumber || "",
+            typeOfListing: listingData.typeOfListing?.toLowerCase() || "",
+            listingType: listingData.listingType?.toLowerCase() || "",
+            price: inferredPrice.toString(),
+            details: {
+              floor: listingData.details?.floor || "",
+              bedroom: listingData.details?.bedroom || "",
+              bathroom: listingData.details?.bathroom || "",
+              kitchen: listingData.details?.kitchen || "",
+              dinningRoom: listingData.details?.dinningRoom || "",
+            },
+            address: listingData.address || "",
+            quartier: listingData.quartier || "",
+            commune: listingData.commune || "",
+            district: listingData.district || "",
+            ville: listingData.ville || "",
+          });
+          setExistingImages(listingData.images || []);
+          setLoading(false);
+        } else {
+          throw new Error("No listing ID provided");
         }
-
-        const listing = response.data;
-        const inferredPrice = listing.priceMonthly || listing.priceDaily || listing.priceSale || "";
-
-        setFormData({
-          listerFirstName: listing.listerFirstName || "",
-          listerLastName: listing.listerLastName || "",
-          listerEmailAddress: listing.listerEmailAddress || "",
-          listerPhoneNumber: listing.listerPhoneNumber || "",
-          typeOfListing: listing.typeOfListing?.toLowerCase() || "",
-          listingType: listing.listingType?.toLowerCase() || "",
-          price: inferredPrice.toString(),
-          details: {
-            floor: listing.details?.floor || "",
-            bedroom: listing.details?.bedroom || "",
-            bathroom: listing.details?.bathroom || "",
-            kitchen: listing.details?.kitchen || "",
-            dinningRoom: listing.details?.dinningRoom || "",
-          },
-          address: listing.address || "",
-          quartier: listing.quartier || "",
-          commune: listing.commune || "",
-          district: listing.district || "",
-          ville: listing.ville || "",
-        });
-
-        setExistingImages(listing.images || []);
       } catch (error) {
-        if (!isMounted) return;
-        
         console.error("Fetch error:", error);
         setMessage({
           text: error.response?.data?.message || error.message || "Failed to load listing",
           type: "error"
         });
         setTimeout(() => navigate("/list-property"), 3000);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
       }
     };
 
     fetchListing();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id, token, navigate]);
+  }, [id, token, navigate, listing]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -178,18 +192,34 @@ const UpdateListing = () => {
       images.forEach(file => data.append("images", file));
       removedImages.forEach(url => data.append("removedImages", url));
 
-      const response = await API.put(`/listings/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      setMessage({
-        text: "Listing updated successfully!",
-        type: "success"
-      });
-      setTimeout(() => navigate("/list-property"), 1500);
+      // Use the correct endpoint based on how the component is being used
+      if (onSave) {
+        // When used in modal from Listings component
+        const response = await API.put(
+          `/listings/update/${id || listing._id}`,
+          data,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        onSave(response.data);
+      } else {
+        // When used as standalone page
+        const response = await API.put(`/listings/${id}`, data, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        setMessage({
+          text: "Listing updated successfully!",
+          type: "success"
+        });
+        setTimeout(() => navigate("/list-property"), 1500);
+      }
     } catch (err) {
       console.error("Update error:", err);
       setMessage({
@@ -424,7 +454,7 @@ const UpdateListing = () => {
           <button
             type="button"
             className="cancel-btn"
-            onClick={() => navigate("/list-property")}
+            onClick={onClose || (() => navigate("/list-property"))}
           >
             Cancel
           </button>
