@@ -10,7 +10,7 @@ const shuffleArray = (arr) => {
     .map(({ value }) => value);
 };
 
-const FeaturedListings = () => {
+const FeaturedListings = ({ listings }) => {
   const [featured, setFeatured] = useState([]);
   const [activeImages, setActiveImages] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -18,19 +18,24 @@ const FeaturedListings = () => {
 
   useEffect(() => {
     const fetchListings = async () => {
-      try {
-        const res = await API.get("/listings");
-        const allListings = Array.isArray(res.data)
-          ? res.data
-          : res.data?.data || res.data?.listings || [];
-        const shuffled = shuffleArray(allListings);
-        setFeatured(shuffled.slice(0, 4));
-      } catch (err) {
-        console.error("Error fetching listings:", err);
+      if (listings && listings.length > 0) {
+        setFeatured(listings);
+      } else {
+        try {
+          const res = await API.get("/listings");
+          const allListings = Array.isArray(res.data)
+            ? res.data
+            : res.data?.data || res.data?.listings || [];
+          const shuffled = shuffleArray(allListings);
+          setFeatured(shuffled.slice(0, 4));
+        } catch (err) {
+          console.error("Error fetching listings:", err);
+        }
       }
     };
     fetchListings();
-  }, []);
+  }, [listings]);
+  
 
   useEffect(() => {
     const interval = setInterval(() => {
