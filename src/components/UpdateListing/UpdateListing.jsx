@@ -309,55 +309,57 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage({ text: "", type: "" });
-
+  
     try {
       const data = new FormData();
-
+  
       // Append all form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "details") {
-          data.append("details", JSON.stringify(value));
-        } else if (key !== "price") {
-          data.append(key, value);
+      const basicFields = [
+        'listerFirstName', 'listerLastName', 'listerEmailAddress',
+        'listerPhoneNumber', 'typeOfListing', 'listingType',
+        'address', 'quartier', 'commune', 'district', 'ville'
+      ];
+      
+      basicFields.forEach(field => {
+        if (formData[field] !== undefined) {
+          data.append(field, formData[field]);
         }
       });
-
+  
       // Handle price based on listing type
       const priceValue = parseFloat(formData.price) || 0;
-      if (formData.listingType === "sale") {
-        data.append("priceSale", priceValue);
-      } else if (formData.listingType === "rent") {
-        data.append("priceMonthly", priceValue);
-      } else if (formData.listingType === "daily") {
-        data.append("priceDaily", priceValue);
+      // Clear all price fields first to avoid conflicts
+      data.append("priceSale", formData.listingType === "sale" ? priceValue : "");
+      data.append("priceMonthly", formData.listingType === "rent" ? priceValue : "");
+      data.append("priceDaily", formData.listingType === "daily" ? priceValue : "");
+  
+      // Handle image updates - append each file separately
+      images.forEach((file, index) => {
+        data.append(`images`, file); // Note: key should be 'images' without index
+      });
+  
+      // Handle removed images
+      if (removedImages.length > 0) {
+        removedImages.forEach(url => {
+          data.append("removedImages", url);
+        });
       }
-
-      // Handle image updates
-      images.forEach(file => data.append("images", file));
-      removedImages.forEach(url => data.append("removedImages", url));
-
-      // Use the correct endpoint based on how the component is being used
+  
+      // Use the correct endpoint
+      const endpoint = onSave 
+        ? `/listings/update/${id || listing._id}`
+        : `/listings/${id}`;
+  
+      const response = await API.put(endpoint, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
       if (onSave) {
-        // When used in modal from Listings component
-        const response = await API.put(
-          `/listings/update/${id || listing._id}`,
-          data,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
         onSave(response.data);
       } else {
-        // When used as standalone page
-        const response = await API.put(`/listings/${id}`, data, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
         setMessage({
           text: "Listing updated successfully!",
           type: "success"
@@ -663,4 +665,3 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
 };
 
 export default UpdateListing;
-
