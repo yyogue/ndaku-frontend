@@ -3,7 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../redux/slices/authSlice";
+import Logo from "../Logo/logo"
 import "./NavBar.scss";
+
+
 
 const NavBar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -29,7 +32,8 @@ const NavBar = () => {
   return (
     <div className="mainNav">
       <Link to="/">
-        <span className="navLink" >LOGO</span>
+        <span className="navLink">LOGO</span>
+        {/* < Logo /> */}
       </Link>
       <h1 className="navText">NDAKU</h1>
 
@@ -42,28 +46,9 @@ const NavBar = () => {
       </div>
 
       <div className={`navLinks ${isMobileMenuOpen ? "active" : ""}`}>
-        {/* <Link to="/home" className="navLink" onClick={toggleMenu}>
-          Home
-        </Link> */}
-        <Link to="/for-rent" className="navLink" onClick={toggleMenu}>
-          For Rent
-        </Link>
-        <Link to="/for-sale" className="navLink" onClick={toggleMenu}>
-          For Sale
-        </Link>
-        <Link to="/contact-us" className="navLink" onClick={toggleMenu}>
-          Contact Us
-        </Link>
-        <Link to="/faq" className="navLink" onClick={toggleMenu}>
-          FAQ
-        </Link>
-        <Link to="/about-us" className="navLink" onClick={toggleMenu}>
-          About Us
-        </Link>
-
         {isAuthenticated && (
           <Link to="/list-property" className="listPropertyBtn" onClick={toggleMenu}>
-            List Property
+            Publier un bien
           </Link>
         )}
 
@@ -71,19 +56,19 @@ const NavBar = () => {
           {!isAuthenticated ? (
             <>
               <Link to="/login" className="login" onClick={toggleMenu}>
-                Login
+                Se connecter
               </Link>
               <Link to="/signup" className="signup" onClick={toggleMenu}>
-                Signup
+                S'inscrire
               </Link>
             </>
           ) : (
             <>
               <span className="navLink">
-                Hi{user?.firstName ? `, ${user.firstName}` : ""}
+                Salut{user?.firstName ? `, ${user.firstName}` : ""}
               </span>
               <Link to="/home" className="navLink" onClick={handleLogout}>
-                Logout
+                Se déconnecter
               </Link>
             </>
           )}

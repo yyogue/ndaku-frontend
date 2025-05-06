@@ -21,7 +21,7 @@ const DashboardLayout = () => {
       {/* <Sidebar /> */}
       <div className="main-content">
         <div className="header">
-          <h2>My Listings</h2>
+          <h2>Mes Annonces</h2>
           <button className="add-listing-btn" onClick={handleAddListing}>
             + Add Listing
           </button>

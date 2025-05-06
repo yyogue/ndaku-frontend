@@ -8,10 +8,10 @@ const ConfirmDialog = ({ message, onConfirm, onCancel }) => {
         <p>{message}</p>
         <div className="dialog-buttons">
           <button className="confirm" onClick={onConfirm}>
-            Yes
+            Oui
           </button>
           <button className="cancel" onClick={onCancel}>
-            No
+            Non
           </button>
         </div>
       </div>

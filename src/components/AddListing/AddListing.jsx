@@ -1,3 +1,4 @@
+// AddListing.js
 import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +23,7 @@ const AddListing = () => {
         bedroom: "",
         bathroom: "",
         kitchen: "",
-        diningRoom: "",
+        diningRoom: "", // Fixed spelling from "dinningRoom" to "diningRoom"
       },
     },
     location: {
@@ -222,7 +223,7 @@ const AddListing = () => {
     setShowSuccess(false);
 
     if (!token || !user?._id) {
-      setError("Authentication failed. Please log in again.");
+      setError("Échec de l'authentification. Veuillez vous reconnecter.");
       setIsSubmitting(false);
       return;
     }
@@ -250,21 +251,33 @@ const AddListing = () => {
         bedroom: parseInt(formData.property.details.bedroom) || 0,
         bathroom: parseInt(formData.property.details.bathroom) || 0,
         kitchen: parseInt(formData.property.details.kitchen) || 0,
-        diningRoom: parseInt(formData.property.details.diningRoom) || 0,
+        diningRoom: parseInt(formData.property.details.diningRoom) || 0, // Fixed spelling
       };
       data.append("details", JSON.stringify(detailsObj));
 
-      const priceValue = parseFloat(formData.property.price) || 0;
+      const priceValue = parseFloat(formData.property.price);
+      if (isNaN(priceValue) || priceValue <= 0) {
+        setError("Veuillez entrer un prix valide supérieur à 0.");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!formData.property.listingType) {
+        setError("Veuillez sélectionner un type d'annonce (location, vente ou journalier).");
+        setIsSubmitting(false);
+        return;
+      }
+      
       if (formData.property.listingType === "sale") {
         data.append("priceSale", priceValue);
       } else if (formData.property.listingType === "rent") {
         data.append("priceMonthly", priceValue);
       } else if (formData.property.listingType === "daily") {
         data.append("priceDaily", priceValue);
-      }
+      }      
 
       if (images.length === 0) {
-        setError("At least one image is required");
+        setError("Au moins une image est requise");
         setIsSubmitting(false);
         return;
       }
@@ -283,18 +296,18 @@ const AddListing = () => {
       const remainingTime = Math.max(minDisplayTime - submissionTime, 0);
 
       setShowSuccess(true);
-      setMessage("Listing added successfully!");
+      setMessage("Annonce ajoutée avec succès !");
       resetForm(); 
 
       timeoutRef.current = setTimeout(() => {
-        navigate("/list-property");
+        window.location.reload();
       }, remainingTime);
 
     } catch (err) {
-      console.error("Submission Error:", err);
+      console.error("Erreur de soumission:", err);
       setError(
         err.response?.data?.message ||
-        "Failed to submit listing. Please try again."
+        "Échec de la soumission de l'annonce. Veuillez réessayer."
       );
     } finally {
       setIsSubmitting(false);
@@ -303,16 +316,16 @@ const AddListing = () => {
 
   const getPriceLabel = () => {
     switch (formData.property.listingType) {
-      case "rent": return "Monthly Rent";
-      case "daily": return "Daily Rent";
-      case "sale": return "Sale Price";
-      default: return "Price";
+      case "rent": return "Loyer Mensuel";
+      case "daily": return "Loyer Journalier";
+      case "sale": return "Prix de Vente";
+      default: return "Prix";
     }
   };
 
   return (
     <div className="add-listing-container">
-      <h2>Add New Listing</h2>
+      <h2>Ajouter une Nouvelle Annonce</h2>
       
       {error && <div className="error-message">{error}</div>}
       
@@ -322,12 +335,12 @@ const AddListing = () => {
   
       <form onSubmit={handleSubmit} className="listing-form">
         <section className="form-section">
-          <h3>Contact Information</h3>
+          <h3>Informations de Contact</h3>
           <div className="form-group">
             <input
               type="text"
               name="lister.firstName"
-              placeholder="First Name"
+              placeholder="Prénom"
               value={formData.lister.firstName}
               onChange={handleChange}
               required
@@ -335,7 +348,7 @@ const AddListing = () => {
             <input
               type="text"
               name="lister.lastName"
-              placeholder="Last Name"
+              placeholder="Nom"
               value={formData.lister.lastName}
               onChange={handleChange}
               required
@@ -354,7 +367,7 @@ const AddListing = () => {
             <input
               type="text"
               name="lister.phone"
-              placeholder="Phone"
+              placeholder="Téléphone"
               value={formData.lister.phone}
               onChange={handleChange}
               required
@@ -363,7 +376,7 @@ const AddListing = () => {
         </section>
   
         <section className="form-section">
-          <h3>Property Details</h3>
+          <h3>Détails du Bien</h3>
           <div className="form-group">
             <select
               name="property.type"
@@ -371,12 +384,10 @@ const AddListing = () => {
               onChange={handleChange}
               required
             >
-              <option value="">Select Type of Property</option>
-              <option value="apartment">Apartment</option>
-              <option value="house">House</option>
-              <option value="condo">Condo</option>
-              {/* <option value="office">Office Space</option> */}
-              {/* <option value="land">Land</option> */}
+              <option value="">Sélectionnez le Type de Bien</option>
+              <option value="apartment">Appartement</option>
+              <option value="house">Maison</option>
+              <option value="condo">Condominium</option>
             </select>
           </div>
       
@@ -387,75 +398,76 @@ const AddListing = () => {
               onChange={handleChange}
               required
             >
-              <option value="">Select Listing Type</option>
-              <option value="rent">Rent</option>
-              <option value="daily">Daily</option>
-              <option value="sale">Sale</option>
+              <option value="">Sélectionnez le Type d'Annonce</option>
+              <option value="rent">Location</option>
+              <option value="daily">Journalier</option>
+              <option value="sale">Vente</option>
             </select>
             <div className="price-input">
               <span>$</span>
               <input
-                type="number"
+                type="text" // Changed from "number" to "text" to remove spinners
                 name="property.price"
                 value={formData.property.price}
                 onChange={handleChange}
                 placeholder={getPriceLabel()}
                 required
+                pattern="[0-9]*\.?[0-9]+" // Added pattern for validation
               />
             </div>
           </div>
       
           <div className="form-group details-group">
             <input
-              type="number"
+              type="text" // Changed from "number" to "text" to remove spinners
               name="property.details.floor"
-              placeholder="Floor"
+              placeholder="Étage"
               value={formData.property.details.floor}
               onChange={handleChange}
-              min="0"
+              pattern="[0-9]*" // Added pattern for validation
             />
             <input
-              type="number"
+              type="text" // Changed from "number" to "text"
               name="property.details.bedroom"
-              placeholder="Bedrooms"
+              placeholder="Chambres"
               value={formData.property.details.bedroom}
               onChange={handleChange}
-              min="0"
+              pattern="[0-9]*" // Added pattern for validation
             />
             <input
-              type="number"
+              type="text" // Changed from "number" to "text"
               name="property.details.bathroom"
-              placeholder="Bathrooms"
+              placeholder="Salles de Bain"
               value={formData.property.details.bathroom}
               onChange={handleChange}
-              min="0"
+              pattern="[0-9]*" // Added pattern for validation
             />
             <input
-              type="number"
+              type="text" // Changed from "number" to "text"
               name="property.details.kitchen"
-              placeholder="Kitchens"
+              placeholder="Cuisines"
               value={formData.property.details.kitchen}
               onChange={handleChange}
-              min="0"
+              pattern="[0-9]*" // Added pattern for validation
             />
             <input
-              type="number"
+              type="text" // Changed from "number" to "text"
               name="property.details.diningRoom"
-              placeholder="Dining Rooms"
+              placeholder="Salles à Manger"
               value={formData.property.details.diningRoom}
               onChange={handleChange}
-              min="0"
+              pattern="[0-9]*" // Added pattern for validation
             />
           </div>
         </section>
   
         <section className="form-section">
-          <h3>Location</h3>
+          <h3>Localisation</h3>
           <div className="form-group">
             <input
               type="text"
               name="location.address"
-              placeholder="Address"
+              placeholder="Adresse"
               value={formData.location.address}
               onChange={handleChange}
               required
@@ -468,7 +480,7 @@ const AddListing = () => {
               required
               disabled={loading}
             >
-              <option value="">Select City</option>
+              <option value="">Sélectionnez la Ville</option>
               {villes.map((ville) => (
                 <option key={ville} value={ville}>
                   {ville}
@@ -483,7 +495,7 @@ const AddListing = () => {
               required
               disabled={!formData.location.ville || loading}
             >
-              <option value="">Select District</option>
+              <option value="">Sélectionnez le District</option>
               {districts.map((district) => (
                 <option key={district} value={district}>
                   {district}
@@ -498,7 +510,7 @@ const AddListing = () => {
               required
               disabled={!formData.location.district || loading}
             >
-              <option value="">Select Commune</option>
+              <option value="">Sélectionnez la Commune</option>
               {communes.map((commune) => (
                 <option key={commune} value={commune}>
                   {commune}
@@ -513,7 +525,7 @@ const AddListing = () => {
               required
               disabled={!formData.location.commune || loading}
             >
-              <option value="">Select Quartier</option>
+              <option value="">Sélectionnez le Quartier</option>
               {quartiers.map((quartier) => (
                 <option key={quartier} value={quartier}>
                   {quartier}
@@ -524,10 +536,10 @@ const AddListing = () => {
         </section>
   
         <section className="form-section">
-          <h3>Property Images</h3>
+          <h3>Images du Bien</h3>
           <div className="form-group">
             <label className="file-upload-label">
-              <span>Select Images</span>
+              <span>Sélectionnez des Images</span>
               <input
                 type="file"
                 name="images"
@@ -537,7 +549,7 @@ const AddListing = () => {
                 required
               />
             </label>
-            <small>You can select multiple images (max 10)</small>
+            <small>Vous pouvez sélectionner plusieurs images (max 10)</small>
           </div>
       
           {imagePreviews.length > 0 && (
@@ -561,7 +573,7 @@ const AddListing = () => {
         {isSubmitting && (
           <div className="submission-overlay">
             <div className="spinner"></div>
-            <p>Submitting your listing...</p>
+            <p>Soumission de votre annonce...</p>
           </div>
         )}
   
@@ -573,7 +585,7 @@ const AddListing = () => {
           {isSubmitting ? (
             <span className="button-spinner"></span>
           ) : (
-            "Submit Listing"
+            "Soumettre l'Annonce"
           )}
         </button>
       </form>

@@ -83,12 +83,12 @@ const FeaturedListings = ({ listings }) => {
 
   return (
     <div className="featuredContainer">
-      <h2 className="sectionTitle">Featured Properties</h2>
+      {/* <h2 className="sectionTitle">Nos recommandations</h2> */}
       <div className="cardsGrid">
         {featured.map((home) => {
           const currentImgIndex = activeImages[home._id] || 0;
           const currentImage = home.images?.[currentImgIndex];
-
+  
           return (
             <div className="card" key={home._id}>
               {home.images && home.images.length > 0 && (
@@ -96,7 +96,7 @@ const FeaturedListings = ({ listings }) => {
                   <img
                     loading="lazy"
                     src={currentImage}
-                    alt={`Slide ${currentImgIndex + 1}`}
+                    alt={`Image ${currentImgIndex + 1}`}
                     className="propertyImage"
                     onClick={() => handleImageClick(currentImage)}
                   />
@@ -128,35 +128,34 @@ const FeaturedListings = ({ listings }) => {
                 </div>
               )}
               <div className="cardInfo">
-                <h3>{home.typeOfListing || "Property"}</h3>
+                <h3>{home.typeOfListing || "Bien immobilier"}</h3>
                 <p className="location">
                   <i className="fas fa-map-marker-alt"></i> {home.address}, {home.commune}
                 </p>
                 <div className="features">
-                  <span><i className="fas fa-bed"></i> {home.details?.bedroom || 0} Beds</span>
-                  <span><i className="fas fa-bath"></i> {home.details?.bathroom || 0} Baths</span>
+                  <span><i className="fas fa-bed"></i> {home.details?.bedroom || 0} Chambres</span>
+                  <span><i className="fas fa-bath"></i> {home.details?.bathroom || 0} Salles de bain</span>
                 </div>
                 <div className="price">
-                  {home.listingType === 'rent' && `$${home.priceMonthly?.toLocaleString()}/mo`}
+                  {home.listingType === 'rent' && `$${home.priceMonthly?.toLocaleString()}/mois`}
                   {home.listingType === 'sale' && `$${home.priceSale?.toLocaleString()}`}
-                  {home.listingType === 'daily' && `$${home.priceDaily?.toLocaleString()}/day`}
+                  {home.listingType === 'daily' && `$${home.priceDaily?.toLocaleString()}/jour`}
                 </div>
                 <button className="voirPlusBtn">
-                  <Link to={`/listing/${home._id}`}>View Details</Link>
+                  <Link to={`/listing/${home._id}`}>Voir plus</Link>
                 </button>
               </div>
             </div>
           );
         })}
       </div>
-
+  
       {showModal && (
         <div className="modalOverlay" onClick={closeModal}>
-          <img src={modalImage} alt="Full preview" className="modalImage" />
+          <img src={modalImage} alt="Aperçu complet" className="modalImage" />
         </div>
       )}
     </div>
-  );
-};
+  );}
 
 export default FeaturedListings;

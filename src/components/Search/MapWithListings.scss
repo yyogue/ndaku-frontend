@@ -1,10 +1,11 @@
+@use "sass:color";
 // Main container
 .apartments-container {
   position: relative;
   width: 100%;
   height: calc(100vh - 80px); // Adjust based on your header height
   display: flex;
-  background: #ffffff;
+  background-color: #ffffff; // Changed to white
   
   @media (max-width: 991px) {
     height: auto;
@@ -55,6 +56,7 @@
   display: flex;
   width: 100%;
   height: 100%;
+  background-color: #ffffff; // Added explicit background color
   
   // Desktop layout - map left, listings right
   @media (min-width: 992px) {
@@ -68,6 +70,7 @@
       width: 50%;
       height: 100%;
       overflow-y: auto;
+      background-color: #ffffff; // Explicit background
     }
   }
   
@@ -104,12 +107,12 @@
 // Map section styles
 .map-section {
   position: relative;
-  background: #f5f5f5;
+  background-color: #f5f5f5;
   
   .leaflet-container {
     height: 100%;
     width: 100%;
-    background: #e8e8e8;
+    background-color: #e8e8e8;
   }
   
   // Custom controls
@@ -120,19 +123,189 @@
       top: 10px;
     }
   }
+  
+  // Custom marker styles
+  .custom-marker {
+    background: transparent;
+    
+    .marker-inner {
+      width: 30px;
+      height: 30px;
+      background-color: #ff5a5f;
+      border: 2px solid white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      position: relative;
+      
+      &:after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 8px solid #ff5a5f;
+      }
+    }
+    
+    &.active {
+      z-index: 1000;
+      
+      .marker-inner {
+        background-color: #008489;
+        transform: scale(1.2);
+        
+        &:after {
+          border-top-color: #008489;
+        }
+        
+        .pulse {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background-color: rgba(0, 132, 137, 0.6);
+          animation: pulse 1.5s infinite;
+        }
+      }
+    }
+  }
+  
+  // Popup styles
+  .leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+  }
+  
+  .leaflet-popup-content {
+    margin: 0;
+    width: 280px !important;
+  }
+  
+  .map-popup {
+    .popup-image {
+      height: 140px;
+      overflow: hidden;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      
+      .no-image {
+        width: 100%;
+        height: 100%;
+        background-color: #f7f7f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        i {
+          color: #ddd;
+          font-size: 40px;
+        }
+      }
+    }
+    
+    .popup-content {
+      padding: 12px;
+      
+      h4 {
+        margin: 0 0 5px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      
+      .popup-address {
+        font-size: 13px;
+        color: #666;
+        margin: 0 0 8px;
+      }
+      
+      .popup-price {
+        font-size: 15px;
+        font-weight: 600;
+        color: #ff5a5f;
+        margin: 0 0 8px;
+      }
+      
+      .popup-features {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        color: #666;
+        
+        span {
+          display: flex;
+          align-items: center;
+          
+          i {
+            margin-right: 4px;
+          }
+        }
+      }
+      
+      .popup-link {
+        display: inline-block;
+        background-color: #008489;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        &:hover {
+          background-color: color.adjust(#008489, $lightness: -5%);
+        }
+      }
+    }
+  }
 }
 
 // Listings section styles
 .listings-section {
-  background: #ffffff;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
+  
+  // No results found
+  .no-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    
+    i {
+      font-size: 64px;
+      color: #ddd;
+      margin-bottom: 20px;
+    }
+    
+    p {
+      font-size: 18px;
+      color: #666;
+      margin: 0;
+    }
+  }
   
   // Header
   .listings-header {
     position: sticky;
     top: 0;
-    background: white;
+    background-color: white;
     z-index: 10;
     padding: 15px 25px;
     border-bottom: 1px solid #ebebeb;
@@ -180,25 +353,36 @@
         gap: 8px;
         
         button {
-          background: white;
+          background-color: white;
           border: 1px solid #ddd;
           border-radius: 6px;
-          width: 36px;
-          height: 36px;
+          width: 40px; // Increased from 36px
+          height: 40px; // Increased from 36px
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s;
           
+          i {
+            font-size: 18px; // Increased from default
+            color: #666; // Added color for better visibility
+          }
+          
           &.active {
-            background: #008489;
+            background-color: #008489;
             color: white;
             border-color: #008489;
+            transform: scale(1.05); // Slight enlargement for active state
+            
+            i {
+              color: white; // Ensure icon is white when active
+            }
           }
           
           &:hover:not(.active) {
-            border-color: #bbb;
+            border-color: #999;
+            background-color: #f9f9f9;
           }
         }
       }
@@ -208,6 +392,7 @@
   // Listings grid
   .listings-grid {
     padding: 15px;
+    background-color: #ffffff; // Added explicit background
     
     &.grid {
       display: grid;
@@ -229,12 +414,13 @@
 
 // Listing card styles
 .listing-card {
-  background: white;
+  background-color: white;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   border: 1px solid #e6e6e6;
+  cursor: pointer;
   
   &:hover {
     transform: translateY(-2px);
@@ -272,24 +458,102 @@
     
     .listing-info {
       flex: 1;
+      padding: 15px;
     }
   }
   
-  // Image container
+  // Image container and carousel
   .listing-image {
     position: relative;
     
-    img {
+    .image-carousel {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
+      position: relative;
+      overflow: hidden; // Added to ensure images don't spill out
+      
+      .carousel-images {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        transition: transform 0.3s ease;
+      }
+      
+      .carousel-image {
+        min-width: 100%;
+        height: 100%;
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+      
+      .carousel-nav {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        pointer-events: none;
+        
+        .carousel-button {
+          height: 100%;
+          width: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: rgba(0, 0, 0, 0.1); // Changed from 0 to 0.1 for better visibility
+          color: white;
+          border: none;
+          cursor: pointer;
+          opacity: 0.7; // Changed from 0 to 0.7 for better visibility
+          transition: opacity 0.2s, background-color 0.2s;
+          pointer-events: auto;
+          
+          &:hover {
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.3); // Changed from 0.2 to 0.3
+          }
+          
+          i {
+            font-size: 24px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+          }
+        }
+      }
+      
+      .carousel-dots {
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+        
+        .dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: rgba(255, 255, 255, 0.6);
+          cursor: pointer;
+          transition: transform 0.2s, background-color 0.2s;
+          
+          &.active {
+            background-color: white;
+            transform: scale(1.2); // Enlarged active dot
+          }
+        }
+      }
     }
     
     .no-image {
       width: 100%;
       height: 100%;
-      background: #f7f7f7;
+      background-color: #f7f7f7;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -300,399 +564,195 @@
       }
     }
     
+    // Badge for listing type
     .listing-badge {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0, 132, 137, 0.9);
+      background-color: #ff5a5f;
       color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
       font-size: 12px;
       font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      z-index: 1;
     }
     
+    // Badge for image count
     .image-count {
       position: absolute;
       bottom: 10px;
       right: 10px;
-      background: rgba(0, 0, 0, 0.6);
+      background-color: rgba(0, 0, 0, 0.6);
       color: white;
-      padding: 3px 8px;
-      border-radius: 3px;
       font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
       
       i {
-        margin-right: 3px;
+        margin-right: 4px;
       }
     }
   }
   
-  // Info container
+  // Listing information
   .listing-info {
-    padding: 16px;
+    padding: 15px;
     
     .listing-primary {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
+      align-items: flex-start;
+      margin-bottom: 10px;
       
       .listing-title {
         margin: 0;
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 600;
         color: #333;
       }
       
       .listing-price {
+        font-size: 18px;
         font-weight: 700;
-        color: #008489;
-        font-size: 16px;
+        color: #ff5a5f;
       }
     }
     
     .listing-location {
-      color: #767676;
-      font-size: 14px;
-      margin: 5px 0 10px;
       display: flex;
       align-items: center;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
       
       i {
-        margin-right: 5px;
-        font-size: 12px;
+        margin-right: 6px;
+        color: #999;
       }
     }
     
     .listing-features {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 15px;
       margin-bottom: 15px;
       
       span {
         display: flex;
         align-items: center;
-        font-size: 13px;
-        color: #555;
+        font-size: 14px;
+        color: #666;
         
         i {
-          margin-right: 5px;
-          color: #777;
-          font-size: 12px;
+          margin-right: 6px;
+          color: #999;
         }
       }
     }
     
     .listing-description {
       font-size: 14px;
-      color: #555;
-      line-height: 1.4;
+      color: #666;
       margin-bottom: 15px;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.5;
     }
     
     .listing-actions {
+      margin-top: auto;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      justify-content: flex-end;
       
       .view-details {
-        flex: 1;
-        background: #008489;
+        display: inline-block;
+        background-color: #008489;
         color: white;
-        text-align: center;
-        padding: 8px;
+        text-decoration: none;
+        padding: 8px 16px;
         border-radius: 6px;
         font-size: 14px;
-        font-weight: 500;
-        transition: background 0.2s;
+        font-weight: 600;
+        transition: background-color 0.2s;
         
         &:hover {
-          background: #006c70;
-          text-decoration: none;
-        }
-      }
-      
-      .favorite-btn {
-        width: 36px;
-        height: 36px;
-        margin-left: 10px;
-        border-radius: 50%;
-        border: 1px solid #ddd;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        
-        &:hover {
-          color: #ff5a5f;
-          border-color: #ff5a5f;
+          background-color: color.adjust(#008489, $lightness: -5%);
         }
       }
     }
   }
 }
 
-// Custom marker styles
-.custom-marker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  background: #008489;
-  border-radius: 50%;
-  color: white;
-  font-weight: bold;
-  border: 2px solid white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-  
-  &.active {
-    background: #ff5a5f;
-    transform: scale(1.2);
-    z-index: 1000;
-    
-    .marker-inner::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: rgba(255, 90, 95, 0.4);
-      animation: pulse 2s infinite;
-      z-index: -1;
-    }
-  }
-  
-  .marker-inner {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-  }
-}
-
+// Animation for marker pulse
 @keyframes pulse {
   0% {
-    transform: scale(0.8);
-    opacity: 0.7;
-  }
-  70% {
-    transform: scale(1.3);
-    opacity: 0;
+    transform: scale(1);
+    opacity: 1;
   }
   100% {
-    transform: scale(0.8);
+    transform: scale(1.5);
     opacity: 0;
   }
 }
 
-// Leaflet popup customizations
-.leaflet-popup-content-wrapper {
-  border-radius: 8px !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15) !important;
-  padding: 0 !important;
-  
-  .leaflet-popup-content {
-    margin: 0 !important;
-    width: auto !important;
-    min-width: 250px;
-  }
-}
-
-.map-popup {
-  .popup-image {
-    height: 120px;
-    width: 100%;
-    overflow: hidden;
-    
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-  
-  .popup-content {
-    padding: 12px;
-    
-    h4 {
-      margin: 0 0 5px;
-      font-size: 15px;
-      color: #333;
-    }
-    
-    .popup-address {
-      color: #767676;
-      font-size: 13px;
-      margin: 0 0 8px;
-    }
-    
-    .popup-price {
-      font-weight: 700;
-      color: #008489;
-      margin: 0 0 8px;
-      font-size: 14px;
-    }
-    
-    .popup-features {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      font-size: 13px;
-      color: #555;
-    }
-    
-    .popup-link {
-      display: inline-block;
-      width: 100%;
-      text-align: center;
-      background: #008489;
-      color: white;
-      padding: 5px;
-      border-radius: 4px;
-      font-size: 13px;
-      transition: background 0.2s;
-      
-      &:hover {
-        background: #006c70;
-        text-decoration: none;
-      }
-    }
-  }
-}
-
-// Loading and error states
-.loading-container, .error-container {
+// Loading spinner
+.loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  text-align: center;
+  padding: 40px;
+  background-color: white;
   
-  i {
-    font-size: 48px;
-    margin-bottom: 20px;
-    color: #008489;
-  }
-  
-  h2 {
-    margin-bottom: 10px;
-    color: #333;
-  }
-  
-  p {
-    color: #767676;
-    max-width: 500px;
-    margin: 0 auto;
-  }
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(0, 132, 137, 0.2);
-  border-radius: 50%;
-  border-top-color: #008489;
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.error-container i {
-  color: #ff5a5f;
-}
-
-// No results
-.no-results {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  
-  i {
-    font-size: 48px;
-    color: #ddd;
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(0, 132, 137, 0.2);
+    border-top-color: #008489;
+    border-radius: 50%;
+    animation: spin 1s infinite linear;
     margin-bottom: 15px;
   }
   
   p {
-    color: #767676;
     font-size: 16px;
-    margin: 0;
+    color: #666;
   }
 }
 
-// Dark mode support
-@media (prefers-color-scheme: dark) {
-  .apartments-container {
-    background: #121212;
-    
-    .listings-section {
-      background: #1e1e1e;
-    }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Error container
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+  background-color: white;
+  
+  i {
+    font-size: 48px;
+    color: #ff5a5f;
+    margin-bottom: 15px;
   }
   
-  .listing-card {
-    background: #2d2d2d;
-    border-color: #444;
-    
-    .listing-title, .listing-price {
-      color: #f0f0f0 !important;
-    }
-    
-    .listing-location, .listing-features span {
-      color: #bbb !important;
-    }
-    
-    .listing-description {
-      color: #ccc !important;
-    }
-    
-    .no-image {
-      background: #333 !important;
-    }
+  h2 {
+    font-size: 24px;
+    color: #333;
+    margin: 0 0 10px;
   }
   
-  .listings-header {
-    background: #252525 !important;
-    border-color: #444 !important;
-    
-    h2 {
-      color: #f0f0f0 !important;
-    }
-    
-    p {
-      color: #aaa !important;
-    }
-    
-    .sort-control select, .view-control button {
-      background: #333 !important;
-      border-color: #444 !important;
-      color: #f0f0f0 !important;
-    }
-  }
-  
-  .leaflet-container {
-    background: #252525 !important;
-    
-    .leaflet-tile {
-      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-    }
+  p {
+    font-size: 16px;
+    color: #666;
+    max-width: 400px;
+    margin: 0;
   }
 }

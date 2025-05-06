@@ -43,50 +43,51 @@ const Signup = () => {
       <div className="signup-image-side" />
       <div className="signup-form-side">
         <div className="signup-container">
-          <h2>Create an Account</h2>
+          <h2>Créer un compte</h2>
           <form className="signup-form" onSubmit={handleSubmit}>
             <input
               name="firstName"
-              placeholder="First Name"
+              placeholder="Prénom"
               onChange={handleChange}
               required
             />
             <input
               name="lastName"
-              placeholder="Last Name"
+              placeholder="Nom"
               onChange={handleChange}
               required
             />
             <input
               name="phoneNumber"
-              placeholder="Phone Number"
+              placeholder="Numéro de téléphone"
               onChange={handleChange}
               required
             />
             <input
               name="email"
-              placeholder="Email"
+              placeholder="E-mail"
               onChange={handleChange}
               required
             />
             <input
               type="password"
               name="password"
-              placeholder="Password"
+              placeholder="Mot de passe"
               onChange={handleChange}
               required
             />
-            <button type="submit">Create Account</button>
+
+            <button type="submit">Créer un compte</button>
           </form>
 
           <div className="terms">
-            By signing up, you agree to our{" "}
-            <a href="/terms">Terms of Use</a> and{" "}
-            <a href="/privacy">Privacy Policy</a>.
+            En vous inscrivant, vous acceptez nos{" "}
+            <a href="/terms">Conditions d'utilisation</a> et{" "}
+            <a href="/privacy">Politique de confidentialité</a>.
           </div>
 
           <div className="existing-account">
-            Already have an account? <Link to="/login">Sign in</Link>
+            Vous avez déjà un compte ? <Link to="/login">Se connecter</Link>
           </div>
         </div>
       </div>

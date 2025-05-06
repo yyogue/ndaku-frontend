@@ -40,6 +40,10 @@ module.exports = {
     port: 3000,
     open: true,
     hot: true,
+    allowedHosts: [
+      'all', // Allows all hosts
+      '4601-2603-6013-b3f0-6a0-1d2f-1fbe-471f-240b.ngrok-free.app', // Add your ngrok URL here
+    ],
   },
   mode: 'development',
 };

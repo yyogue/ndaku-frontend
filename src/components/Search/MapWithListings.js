@@ -38,6 +38,64 @@ const MapCenterUpdater = ({ center }) => {
   return null;
 };
 
+// Image Carousel Component
+const ImageCarousel = ({ images }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  const handleNext = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+  
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+  
+  const goToSlide = (index, e) => {
+    e.stopPropagation();
+    setCurrentIndex(index);
+  };
+  
+  return (
+    <div className="image-carousel">
+      <div 
+        className="carousel-images" 
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+      >
+        {images.map((image, index) => (
+          <div key={index} className="carousel-image">
+            <img src={image} alt={`Property view ${index + 1}`} loading="lazy" />
+          </div>
+        ))}
+      </div>
+      
+      {images.length > 1 && (
+        <>
+          <div className="carousel-nav">
+            <button className="carousel-button prev" onClick={handlePrev}>
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            <button className="carousel-button next" onClick={handleNext}>
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          
+          <div className="carousel-dots">
+            {images.map((_, index) => (
+              <div 
+                key={index} 
+                className={`dot ${index === currentIndex ? 'active' : ''}`} 
+                onClick={(e) => goToSlide(index, e)}
+              ></div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const MapWithListings = ({ location, preloadedListings, isLoading, error }) => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -321,12 +379,14 @@ const MapWithListings = ({ location, preloadedListings, isLoading, error }) => {
                 <button 
                   className={`view-button ${viewMode === 'grid' ? 'active' : ''}`}
                   onClick={() => setViewMode('grid')}
+                  title="Affichage en grille"
                 >
                   <i className="fas fa-th-large"></i>
                 </button>
                 <button 
                   className={`view-button ${viewMode === 'list' ? 'active' : ''}`}
                   onClick={() => setViewMode('list')}
+                  title="Affichage en liste"
                 >
                   <i className="fas fa-list"></i>
                 </button>
@@ -354,11 +414,16 @@ const MapWithListings = ({ location, preloadedListings, isLoading, error }) => {
                 >
                   <div className="listing-image">
                     {listing.images?.length > 0 ? (
-                      <img
-                        src={listing.images[0]}
-                        alt={listing.typeOfListing}
-                        loading="lazy"
-                      />
+                      // Replace static image with carousel for multiple images
+                      listing.images.length > 1 ? (
+                        <ImageCarousel images={listing.images} />
+                      ) : (
+                        <img
+                          src={listing.images[0]}
+                          alt={listing.typeOfListing}
+                          loading="lazy"
+                        />
+                      )
                     ) : (
                       <div className="no-image">
                         <i className="fas fa-home"></i>
@@ -428,4 +493,3 @@ const MapWithListings = ({ location, preloadedListings, isLoading, error }) => {
 };
 
 export default MapWithListings;
-

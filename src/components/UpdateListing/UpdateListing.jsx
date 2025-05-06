@@ -21,7 +21,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
       bedroom: "",
       bathroom: "",
       kitchen: "",
-      dinningRoom: "",
+      diningRoom: "",
     },
     address: "",
     quartier: "",
@@ -189,7 +189,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
           });
           listingData = response.data;
         } else {
-          throw new Error("No listing ID provided");
+          throw new Error("Aucun ID d'annonce fourni");
         }
 
         const inferredPrice = listingData.priceMonthly || listingData.priceDaily || listingData.priceSale || "";
@@ -254,12 +254,12 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
         
         setLoading(false);
       } catch (error) {
-        console.error("Fetch error:", error);
+        console.error("Erreur de chargement:", error);
         setMessage({
-          text: error.response?.data?.message || error.message || "Failed to load listing",
+          text: error.response?.data?.message || error.message || "Échec du chargement de l'annonce",
           type: "error"
         });
-        setTimeout(() => navigate("/list-property"), 3000);
+        setTimeout(() => window.location.reload(), 3000);
       }
     };
 
@@ -298,10 +298,10 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
 
   const getPriceLabel = () => {
     switch (formData.listingType) {
-      case "rent": return "Monthly Rent";
-      case "daily": return "Daily Rent";
-      case "sale": return "Sale Price";
-      default: return "Price";
+      case "rent": return "Loyer Mensuel";
+      case "daily": return "Loyer Journalier";
+      case "sale": return "Prix de Vente";
+      default: return "Prix";
     }
   };
 
@@ -335,7 +335,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
   
       // Handle image updates - append each file separately
       images.forEach((file, index) => {
-        data.append(`images`, file); // Note: key should be 'images' without index
+        data.append(`images`, file);
       });
   
       // Handle removed images
@@ -361,15 +361,15 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
         onSave(response.data);
       } else {
         setMessage({
-          text: "Listing updated successfully!",
+          text: "Annonce mise à jour avec succès !",
           type: "success"
         });
         setTimeout(() => navigate("/list-property"), 1500);
       }
     } catch (err) {
-      console.error("Update error:", err);
+      console.error("Erreur de mise à jour:", err);
       setMessage({
-        text: err.response?.data?.message || "Failed to update listing",
+        text: err.response?.data?.message || "Échec de la mise à jour de l'annonce",
         type: "error"
       });
     } finally {
@@ -380,14 +380,14 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
   if (loading) {
     return (
       <div className="update-listing-container">
-        <div className="loading">Loading listing data...</div>
+        <div className="loading">Chargement des données de l'annonce...</div>
       </div>
     );
   }
 
   return (
     <div className="update-listing-container">
-      <h2>Update Listing</h2>
+      <h2>Mettre à jour l'Annonce</h2>
       
       {message.text && (
         <div className={`message ${message.type}`}>{message.text}</div>
@@ -396,12 +396,12 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
       <form onSubmit={handleSubmit} className="listing-form">
         {/* Personal Info */}
         <div className="form-section">
-          <h3>Contact Information</h3>
+          <h3>Informations de Contact</h3>
           <div className="form-group">
             <input
               type="text"
               name="listerFirstName"
-              placeholder="First Name"
+              placeholder="Prénom"
               value={formData.listerFirstName}
               onChange={handleChange}
               required
@@ -409,7 +409,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
             <input
               type="text"
               name="listerLastName"
-              placeholder="Last Name"
+              placeholder="Nom"
               value={formData.listerLastName}
               onChange={handleChange}
               required
@@ -427,7 +427,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
             <input
               type="tel"
               name="listerPhoneNumber"
-              placeholder="Phone"
+              placeholder="Téléphone"
               value={formData.listerPhoneNumber}
               onChange={handleChange}
               required
@@ -437,7 +437,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
 
         {/* Property Details */}
         <div className="form-section">
-          <h3>Property Details</h3>
+          <h3>Détails du Bien</h3>
           <div className="form-group">
             <select
               name="typeOfListing"
@@ -445,10 +445,10 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               onChange={handleChange}
               required
             >
-              <option value="">Select Property Type</option>
-              <option value="apartment">Apartment</option>
-              <option value="house">House</option>
-              <option value="condo">Condo</option>
+              <option value="">Sélectionnez le Type de Bien</option>
+              <option value="apartment">Appartement</option>
+              <option value="house">Maison</option>
+              <option value="condo">Condominium</option>
             </select>
           </div>
 
@@ -459,10 +459,10 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               onChange={handleChange}
               required
             >
-              <option value="">Select Listing Type</option>
-              <option value="rent">For Rent</option>
-              <option value="daily">Daily Rental</option>
-              <option value="sale">For Sale</option>
+              <option value="">Sélectionnez le Type d'Annonce</option>
+              <option value="rent">À Louer</option>
+              <option value="daily">Location Journalière</option>
+              <option value="sale">À Vendre</option>
             </select>
             <div className="price-input">
               <span>$</span>
@@ -484,7 +484,12 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
                 key={key}
                 type="number"
                 name={key}
-                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                placeholder={key === 'floor' ? 'Étage' : 
+                             key === 'bedroom' ? 'Chambres' :
+                             key === 'bathroom' ? 'Salles de Bain' :
+                             key === 'kitchen' ? 'Cuisines' :
+                             key === 'dinningRoom' ? 'Salles à Manger' : 
+                             key.charAt(0).toUpperCase() + key.slice(1)}
                 value={value}
                 onChange={handleChange}
                 min="0"
@@ -495,12 +500,12 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
 
         {/* Location */}
         <div className="form-section">
-          <h3>Location</h3>
+          <h3>Localisation</h3>
           <div className="form-group">
             <input
               type="text"
               name="address"
-              placeholder="Address"
+              placeholder="Adresse"
               value={formData.address}
               onChange={handleChange}
               required
@@ -512,7 +517,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               onChange={handleChange}
               required
             >
-              <option value="">Select City</option>
+              <option value="">Sélectionnez la Ville</option>
               {villes.map((ville) => (
                 <option key={ville} value={ville}>
                   {ville}
@@ -520,7 +525,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               ))}
               {formData.ville && !villes.includes(formData.ville) && (
                 <option value={formData.ville}>
-                  {formData.ville} (Current)
+                  {formData.ville} (Actuel)
                 </option>
               )}
             </select>
@@ -532,7 +537,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               required
               disabled={!formData.ville}
             >
-              <option value="">Select District</option>
+              <option value="">Sélectionnez le District</option>
               {districts.map((district) => (
                 <option key={district} value={district}>
                   {district}
@@ -540,7 +545,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               ))}
               {formData.district && !districts.includes(formData.district) && (
                 <option value={formData.district}>
-                  {formData.district} (Current)
+                  {formData.district} (Actuel)
                 </option>
               )}
             </select>
@@ -552,7 +557,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               required
               disabled={!formData.district}
             >
-              <option value="">Select Commune</option>
+              <option value="">Sélectionnez la Commune</option>
               {communes.map((commune) => (
                 <option key={commune} value={commune}>
                   {commune}
@@ -560,7 +565,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               ))}
               {formData.commune && !communes.includes(formData.commune) && (
                 <option value={formData.commune}>
-                  {formData.commune} (Current)
+                  {formData.commune} (Actuel)
                 </option>
               )}
             </select>
@@ -572,7 +577,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               required
               disabled={!formData.commune}
             >
-              <option value="">Select Quartier</option>
+              <option value="">Sélectionnez le Quartier</option>
               {quartiers.map((quartier) => (
                 <option key={quartier} value={quartier}>
                   {quartier}
@@ -580,7 +585,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
               ))}
               {formData.quartier && !quartiers.includes(formData.quartier) && (
                 <option value={formData.quartier}>
-                  {formData.quartier} (Current)
+                  {formData.quartier} (Actuel)
                 </option>
               )}
             </select>
@@ -592,7 +597,7 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
           <h3>Images</h3>
           <div className="form-group">
             <label className="file-upload">
-              <span>Add New Images</span>
+              <span>Ajouter de Nouvelles Images</span>
               <input
                 type="file"
                 onChange={handleImageChange}
@@ -604,11 +609,11 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
 
           {existingImages.length > 0 && (
             <div className="image-preview-section">
-              <h4>Current Images</h4>
+              <h4>Images Actuelles</h4>
               <div className="image-grid">
                 {existingImages.map((img, index) => (
                   <div key={`existing-${index}`} className="image-item">
-                    <img src={img} alt={`Listing ${index}`} />
+                    <img src={img} alt={`Annonce ${index}`} />
                     <button
                       type="button"
                       className="remove-btn"
@@ -624,11 +629,11 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
 
           {images.length > 0 && (
             <div className="image-preview-section">
-              <h4>New Images</h4>
+              <h4>Nouvelles Images</h4>
               <div className="image-grid">
                 {images.map((img, index) => (
                   <div key={`new-${index}`} className="image-item">
-                    <img src={URL.createObjectURL(img)} alt={`New ${index}`} />
+                    <img src={URL.createObjectURL(img)} alt={`Nouvelle ${index}`} />
                     <button
                       type="button"
                       className="remove-btn"
@@ -649,14 +654,14 @@ const UpdateListing = ({ listing, onClose, onSave }) => {
             className="cancel-btn"
             onClick={onClose || (() => navigate("/list-property"))}
           >
-            Cancel
+            Annuler
           </button>
           <button
             type="submit"
             className="submit-btn"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Saving..." : "Save Changes"}
+            {isSubmitting ? "Enregistrement..." : "Enregistrer les Modifications"}
           </button>
         </div>
       </form>

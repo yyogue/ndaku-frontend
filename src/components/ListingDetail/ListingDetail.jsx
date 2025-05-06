@@ -195,7 +195,7 @@ const ListingDetail = () => {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading property details...</p>
+        <p>Chargement des détails de la propriété...</p>
       </div>
     );
   }
@@ -204,10 +204,10 @@ const ListingDetail = () => {
     return (
       <div className="error-container">
         <i className="fas fa-exclamation-circle"></i>
-        <h2>Oops! Something went wrong</h2>
-        <p>{error || "This listing could not be found."}</p>
+        <h2>Oups ! Une erreur s'est produite</h2>
+        <p>{error || "Cette annonce est introuvable."}</p>
         <Link to="/" className="back-button">
-          Back to Home
+          Retour à l'accueil
         </Link>
       </div>
     );
@@ -224,11 +224,11 @@ const ListingDetail = () => {
 
   const priceDisplay =
     listing.listingType === "rent"
-      ? `$${price?.toLocaleString()}/month`
+      ? `$${price?.toLocaleString()}/mois`
       : listing.listingType === "sale"
-      ? `$${price?.toLocaleString()}`
+      ? `$${price?.toLocaleString()}/vente`
       : listing.listingType === "daily"
-      ? `$${price?.toLocaleString()}/day`
+      ? `$${price?.toLocaleString()}/jour`
       : "";
 
   return (
@@ -305,12 +305,12 @@ const ListingDetail = () => {
           {/* Property Header */}
           <div className="listing-title-section">
             <h1>
-              {listing.typeOfListing} for{" "}
+              {listing.typeOfListing} à{" "}
               {listing.listingType === "rent"
-                ? "Rent"
+                ? "Lour"
                 : listing.listingType === "sale"
-                ? "Sale"
-                : "Daily Rental"}
+                ? "Vente"
+                : "Louer par jour"}
             </h1>
             <div className="listing-price">{priceDisplay}</div>
             <div className="listing-address">
@@ -325,8 +325,8 @@ const ListingDetail = () => {
               <div className="listing-availability">
                 <i className="far fa-calendar-alt"></i>
                 <span>
-                  Available for {daysRemaining} more{" "}
-                  {daysRemaining === 1 ? "day" : "days"}
+                  Disponible pendant encore {daysRemaining}{" "}
+                  {daysRemaining === 1 ? "jour" : "jours"}
                 </span>
               </div>
             )}
@@ -342,7 +342,7 @@ const ListingDetail = () => {
 
           {/* Features Section */}
           <div className="listing-features-section">
-            <h2>Property Features</h2>
+            <h2>Caractéristiques</h2>
             <div className="features-grid">
               {listing.details &&
                 Object.entries(listing.details).map(([key, value]) => (
@@ -352,13 +352,21 @@ const ListingDetail = () => {
                       <span className="feature-value">{value}</span>
                       <span className="feature-name">
                         {key === "bedroom"
-                          ? "Bedrooms"
+                          ? "Chambres"
                           : key === "bathroom"
-                          ? "Bathrooms"
+                          ? "Salles de bain"
                           : key === "dinningRoom"
-                          ? "Dining Rooms"
+                          ? "Salles à manger"
                           : key === "floor"
-                          ? "Floors"
+                          ? "Étages"
+                          : key === "kitchen"
+                          ? "Cuisines"
+                          : key === "parking"
+                          ? "Parking"
+                          : key === "garden"
+                          ? "Jardin"
+                          : key === "wifi"
+                          ? "Wi-Fi"
                           : key.charAt(0).toUpperCase() + key.slice(1)}
                       </span>
                     </div>
@@ -369,7 +377,7 @@ const ListingDetail = () => {
 
           {/* Map Section */}
           <div className="listing-map-section">
-            <h2>Location</h2>
+            <h2>Localisation</h2>
             {geocodeError && (
               <div className="map-warning">
                 <i className="fas fa-exclamation-triangle"></i> {geocodeError}
@@ -402,8 +410,8 @@ const ListingDetail = () => {
             </div>
             <div className="map-disclaimer">
               <small>
-                Note: Map shows approximate location. For precise directions,
-                contact the lister.
+                Remarque : La carte montre l'emplacement approximatif. Pour des
+                indications précises, contactez le propriétaire.
               </small>
             </div>
           </div>
@@ -413,7 +421,7 @@ const ListingDetail = () => {
         <div className="listing-sidebar">
           {/* Contact Card */}
           <div className="contact-card">
-            <h3>Contact Information</h3>
+          <h3>Contact d'informations</h3>
             <div className="lister-info">
               <div className="lister-avatar">
                 {listing.listerProfileImage ? (
@@ -426,7 +434,7 @@ const ListingDetail = () => {
                 <h4>
                   {listing.listerFirstName} {listing.listerLastName}
                 </h4>
-                <p className="lister-title">Property Lister</p>
+                <p className="lister-title">Annonceur</p>
               </div>
             </div>
 
@@ -450,13 +458,13 @@ const ListingDetail = () => {
                 href={`mailto:${listing.listerEmailAddress}?subject=Inquiry about ${listing.typeOfListing} at ${listing.address}`}
                 className="contact-button email"
               >
-                <i className="fas fa-envelope"></i> Email
+                <i className="fas fa-envelope"></i> Envoyer un e-mail
               </a>
               <a
                 href={`tel:${listing.listerPhoneNumber}`}
                 className="contact-button call"
               >
-                <i className="fas fa-phone"></i> Call
+                <i className="fas fa-phone"></i> Appeler
               </a>
             </div>
           </div>
@@ -468,7 +476,7 @@ const ListingDetail = () => {
       {/* Related Listings */}
       {relatedListings.length > 0 && (
         <div className="related-listings-section">
-          <h2>Similar Properties</h2>
+          <h2>Propriétés similaires</h2>
           <div className="related-listings-grid">
             {relatedListings.map((relatedListing) => {
               const relatedPrice =
@@ -523,7 +531,7 @@ const ListingDetail = () => {
                       to={`/listing/${relatedListing._id}`}
                       className="view-details-button"
                     >
-                      View Details
+                      Voir les détails
                     </Link>
                   </div>
                 </div>

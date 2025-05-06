@@ -8,7 +8,7 @@ const Sidebar = () => {
         <h3>Dashboard</h3>
       </div>
       <ul className="sidebar-links">
-        <li>My Listings</li>
+        <li>Mes Annonces</li>
         <li>Messages</li>
         <li>Saved Properties</li>
         <li>Profile Settings</li>

@@ -1,89 +1,96 @@
 import axios from 'axios';
 
-// Create API instance with fixed baseURL
+// Create API instance with environment-aware baseURL
 const API = axios.create({
-  baseURL: 'http://192.168.1.208:5001/api',
-  timeout: 15000, // 15 seconds timeout
+  baseURL: process.env.NODE_ENV === 'production'
+    ? '/api' // Relative path in production
+    : 'https://b3cf-2603-6013-b3f0-6a0-1d2f-1fbe-471f-240b.ngrok-free.app/api',
+  timeout: 15000,
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  }
 });
 
-// Request interceptor
+// Enhanced request interceptor
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  
-  // Try to get token from session storage as fallback for mobile
-  const sessionToken = !token ? sessionStorage.getItem('token') : null;
-  
-  if (token || sessionToken) {
-    config.headers.Authorization = `Bearer ${token || sessionToken}`;
+  // Token handling with fallback
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  
-  // Add device detection for mobile-specific handling
-  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-  config.headers['X-Device-Type'] = isMobile ? 'mobile' : 'desktop';
-  
+
+  // Device detection
+  config.headers['X-Device-Type'] = /Mobi|Android/i.test(navigator.userAgent)
+    ? 'mobile'
+    : 'desktop';
+
   return config;
 }, (error) => {
-  // Don't transform request errors into connection issues
   return Promise.reject(error);
 });
 
-// Improved interceptor for error handling
+// Enhanced response interceptor
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Validate response format
+    if (typeof response.data === 'string' && response.data.startsWith('<!DOCTYPE html>')) {
+      throw new Error('Invalid API response - received HTML');
+    }
+    return response;
+  },
   async (error) => {
-    // For debugging purposes
-    console.log('API Error:', error.response?.data || error.message);
-    
-    // Handle 401 Unauthorized errors (expired token)
-    if (error.response && error.response.status === 401) {
-      console.log('Token expired or invalid. Trying to refresh token...');
-      
-      const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
-      
+    // Original request config
+    const originalRequest = error.config;
+
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const refreshToken = localStorage.getItem('refreshToken') ||
+        sessionStorage.getItem('refreshToken');
+
       if (!refreshToken) {
-        console.log('No refresh token found. Redirecting to login.');
-        localStorage.removeItem('token');
-        sessionStorage.removeItem('token');
-        window.location.href = '/login';
+        clearAuthAndRedirect();
         return Promise.reject(error);
       }
-      
+
       try {
-        // Send refresh token to backend to get a new access token
-        const response = await axios.post('http://localhost:5001/api/refresh-token', { refreshToken });
-        const newAccessToken = response.data.accessToken;
-        
-        // Store the new access token
-        try {
-          localStorage.setItem('token', newAccessToken);
-        } catch (e) {
-          // If localStorage fails (which can happen on some mobile browsers), use sessionStorage
-          sessionStorage.setItem('token', newAccessToken);
-        }
-        
-        // Retry the failed request with the new access token
-        error.config.headers['Authorization'] = `Bearer ${newAccessToken}`;
-        return axios(error.config);
+        const { data } = await axios.post(`${API.defaults.baseURL}/refresh-token`, { refreshToken });
+        storeToken(data.accessToken);
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        return API(originalRequest);
       } catch (refreshError) {
-        console.error('Error refreshing token:', refreshError);
-        localStorage.removeItem('token');
-        sessionStorage.removeItem('token');
+        clearAuthAndRedirect();
         return Promise.reject(refreshError);
       }
     }
-    
-    // Only report connection issues if it's actually a network error
+
+    // Network error handling
     if (error.code === 'ECONNABORTED') {
-      error.message = 'Request timed out. Please check your internet connection.';
+      error.message = 'Request timeout - please check your connection';
+    } else if (!error.response) {
+      error.message = 'Network error - unable to reach server';
     }
-    else if (!error.response && error.request) {
-      // The request was made but no response was received
-      // Don't overwrite specific error messages with generic ones
-      console.log('No response received from server');
-    }
-    
+
     return Promise.reject(error);
   }
 );
+
+// Helper functions
+function storeToken(token) {
+  try {
+    localStorage.setItem('token', token);
+  } catch (e) {
+    sessionStorage.setItem('token', token);
+  }
+}
+
+function clearAuthAndRedirect() {
+  localStorage.removeItem('token');
+  sessionStorage.removeItem('token');
+  window.location.href = '/login';
+}
 
 export default API;
