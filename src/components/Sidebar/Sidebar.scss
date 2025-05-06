@@ -3,13 +3,28 @@
   background-color: #1e293b;
   color: white;
   padding: 20px 10px;
+  height: 100%;
+  transition: all 0.3s ease;
 
   .sidebar-header {
     margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
     h3 {
       margin: 0;
       font-size: 20px;
       color: #38bdf8;
+    }
+
+    .close-menu {
+      display: none; /* Hidden on desktop */
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 20px;
     }
   }
 
@@ -27,6 +42,44 @@
       &:hover {
         background-color: #334155;
       }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    height: 100vh;
+    z-index: 1000;
+    width: 80%;
+    max-width: 300px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+
+    &.open {
+      left: 0;
+    }
+
+    .sidebar-header {
+      .close-menu {
+        display: block; /* Show on mobile */
+      }
+    }
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+
+    &.active {
+      display: block;
     }
   }
 }

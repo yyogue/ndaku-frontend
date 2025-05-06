@@ -1,10 +1,20 @@
 .featuredContainer {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 cards per row on web */
-  gap: 32px;
   padding: 60px 20px;
   max-width: 1200px;
   margin: 0 auto;
+  
+  .sectionTitle {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2rem;
+    color: #333;
+  }
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
 }
 
 .card {
@@ -18,7 +28,7 @@
     transform: translateY(-6px);
   }
 
-  img {
+  .propertyImage {
     width: 100%;
     height: 200px;
     object-fit: cover;
@@ -28,32 +38,58 @@
     padding: 16px;
 
     h3 {
-      margin-bottom: 8px;
-      font-size: 18px;
-      font-weight: 600;
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      color: #333;
     }
 
-    p {
-      color: #555;
-      font-size: 14px;
-      margin-bottom: 8px;
+    .location {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    span {
+    .features {
+      display: flex;
+      gap: 15px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+
+      span {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        color: #555;
+      }
+    }
+
+    .price {
       font-weight: bold;
       color: #0d9051;
+      font-size: 1.1rem;
+      margin: 12px 0;
     }
 
     .voirPlusBtn {
       margin-top: 12px;
       padding: 8px 16px;
       background-color: #0d9051;
-      color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
       font-size: 14px;
-
+    
+      a {
+        color: white;
+        text-decoration: none;
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    
       &:hover {
         background-color: #0b7c41;
       }
@@ -61,14 +97,91 @@
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .featuredContainer {
-    grid-template-columns: repeat(2, 1fr); /* 2 cards per row for tablets */
+    padding: 40px 15px;
+    
+    .sectionTitle {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+    }
+  }
+
+  .cardsGrid {
+    gap: 24px;
   }
 }
 
 @media (max-width: 600px) {
-  .featuredContainer {
-    grid-template-columns: 1fr; /* 1 card per row for mobile */
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.carouselWrapper {
+  position: relative;
+
+  .carouselBtn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.4);
+    border: none;
+    color: white;
+    font-size: 24px;
+    padding: 8px;
+    cursor: pointer;
+    z-index: 1;
+    border-radius: 50%;
+
+    &.prev {
+      left: 10px;
+    }
+
+    &.next {
+      right: 10px;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  .dotsContainer {
+    text-align: center;
+    margin-top: 8px;
+
+    .dot {
+      height: 10px;
+      width: 10px;
+      margin: 0 4px;
+      background-color: #ccc;
+      border-radius: 50%;
+      display: inline-block;
+      cursor: pointer;
+
+      &.active {
+        background-color: #0d9051;
+      }
+    }
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+
+  .modalImage {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 10px;
   }
 }
