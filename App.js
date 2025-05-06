@@ -12,8 +12,9 @@ import Signup from "./src/Pages/Signup/Signup";
 import DashboardLayout from "./src/components/DashboardLayout/DashboardLayout";
 import UpdateListing from "./src/components/UpdateListing/UpdateListing";
 import ListingDetail from "./src/components/ListingDetail/ListingDetail";
-import Search from "./src/components/Search/Search";
 import SearchResults from "./src/components/Search/SearchResults";
+
+// import Search from "./src/components/Search/Search";
 
 const App = () => {
   return (
