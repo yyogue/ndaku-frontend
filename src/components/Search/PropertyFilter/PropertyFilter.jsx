@@ -22,9 +22,11 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
   const dispatch = useDispatch();
 
   // Get location data from Redux store
-  const { quartiers, communes, districts, villes, status, relationships } = useSelector(
-    (state) => state.location
-  );
+  const { quartiers, communes, districts, villes, status, relationships } =
+    useSelector((state) => state.location);
+
+  console.log("Districts from Redux:", districts);
+  console.log("Relationships:", relationships);
 
   // Get current filters from URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -63,26 +65,36 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
 
   // State to track if filters are expanded (mobile)
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // State to track available options for dependent dropdowns
   const [availableCommunes, setAvailableCommunes] = useState([]);
   const [availableQuartiers, setAvailableQuartiers] = useState([]);
+  const [availableDistrict, setAvailableDistrict] = useState([]);
 
   // Fetch location data if not already loaded
   useEffect(() => {
+    console.log("Current status:", status); // Debug log
     if (status === "idle") {
-      dispatch(fetchLocationData());
+      console.log("Dispatching fetchLocationData"); // Debug log
+      dispatch(fetchLocationData())
+        .unwrap()
+        .then((data) => {
+          console.log("Fetch successful:", data); // Debug log
+        })
+        .catch((error) => {
+          console.error("Fetch failed:", error); // Debug log
+        });
     }
   }, [dispatch, status]);
 
   // Apply initialFilters when they change
   useEffect(() => {
     if (initialFilters && Object.keys(initialFilters).length > 0) {
-      setFilters(prevFilters => ({
+      setFilters((prevFilters) => ({
         ...prevFilters,
-        ...initialFilters
+        ...initialFilters,
       }));
-      
+
       // Notify parent about initial filters
       if (onFilterChange) {
         onFilterChange(initialFilters);
@@ -93,22 +105,26 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
   // Update available communes when district changes
   useEffect(() => {
     if (filters.district && relationships?.districtToCommunes) {
-      const communesForDistrict = relationships.districtToCommunes[filters.district] || [];
+      const communesForDistrict =
+        relationships.districtToCommunes[filters.district] || [];
       setAvailableCommunes(communesForDistrict);
-      
+
       // If current commune is not in the list of available communes, reset it
       if (filters.commune && !communesForDistrict.includes(filters.commune)) {
-        setFilters(prev => ({ ...prev, commune: "", quartier: "" }));
+        setFilters((prev) => ({ ...prev, commune: "", quartier: "" }));
       }
-      
+
       // Apply filter immediately when district changes
       const updatedFilters = {
         ...filters,
         district: filters.district,
-        commune: filters.commune && communesForDistrict.includes(filters.commune) ? filters.commune : "",
-        quartier: ""
+        commune:
+          filters.commune && communesForDistrict.includes(filters.commune)
+            ? filters.commune
+            : "",
+        quartier: "",
       };
-      
+
       // Update URL and notify parent
       updateUrlAndNotify(updatedFilters);
     } else {
@@ -120,21 +136,25 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
   // Update available quartiers when commune changes
   useEffect(() => {
     if (filters.commune && relationships?.communeToQuartiers) {
-      const quartiersForCommune = relationships.communeToQuartiers[filters.commune] || [];
+      const quartiersForCommune =
+        relationships.communeToQuartiers[filters.commune] || [];
       setAvailableQuartiers(quartiersForCommune);
-      
+
       // If current quartier is not in the list of available quartiers, reset it
       if (filters.quartier && !quartiersForCommune.includes(filters.quartier)) {
-        setFilters(prev => ({ ...prev, quartier: "" }));
+        setFilters((prev) => ({ ...prev, quartier: "" }));
       }
-      
+
       // Apply filter immediately when commune changes
       const updatedFilters = {
         ...filters,
         commune: filters.commune,
-        quartier: filters.quartier && quartiersForCommune.includes(filters.quartier) ? filters.quartier : ""
+        quartier:
+          filters.quartier && quartiersForCommune.includes(filters.quartier)
+            ? filters.quartier
+            : "",
       };
-      
+
       // Update URL and notify parent
       updateUrlAndNotify(updatedFilters);
     } else {
@@ -156,7 +176,7 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
 
     // Update URL with filters (but don't navigate to avoid page reload)
     const newUrl = `${location.pathname}?${queryParams.toString()}`;
-    window.history.replaceState({}, '', newUrl);
+    window.history.replaceState({}, "", newUrl);
 
     // Pass filters to parent component to filter listings
     if (onFilterChange) {
@@ -165,64 +185,67 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
   };
 
   // Available options for static dropdowns
-  const propertyTypes = [
-    "apartment",
-    "house",
-    "land",
-  ];
+  const propertyTypes = ["apartment", "house", "land"];
   const listingTypes = ["rent", "sale", "daily"];
   const bedroomOptions = ["1", "2", "3", "4", "5+"];
   const bathroomOptions = ["1", "2", "3", "4+"];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle cascading selection for location filters
     if (name === "district") {
-      setFilters({ 
-        ...filters, 
+      console.log("District changed to:", value); // Debug log
+      const updatedFilters = {
+        ...filters,
         [name]: value,
-        commune: "", // Reset commune when district changes
-        quartier: ""  // Reset quartier when district changes
-      });
-      
+        commune: "", // Reset commune
+        quartier: "", // Reset quartier
+      };
+
+      setFilters(updatedFilters);
+
+      updateUrlAndNotify(updatedFilters);
+
       // When district changes, let parent component know immediately
       if (onFilterChange && value) {
         onFilterChange({
           ...filters,
           district: value,
           commune: "",
-          quartier: ""
+          quartier: "",
         });
       }
     } else if (name === "commune") {
-      setFilters({ 
-        ...filters, 
+      setFilters({
+        ...filters,
         [name]: value,
-        quartier: ""  // Reset quartier when commune changes
+        quartier: "", // Reset quartier when commune changes
       });
-      
+
       // When commune changes, let parent component know immediately
       if (onFilterChange && value) {
         onFilterChange({
           ...filters,
           commune: value,
-          quartier: ""
+          quartier: "",
         });
       }
     } else if (name === "quartier") {
-      setFilters({ 
-        ...filters, 
-        [name]: value
-      });
-      
-      // When quartier changes, let parent component know immediately
+      const updatedFilters = {
+        ...filters,
+        [name]: value,
+      };
+
+      setFilters(updatedFilters);
+
+      // Notify parent
       if (onFilterChange && value) {
-        onFilterChange({
-          ...filters,
-          quartier: value
-        });
+        onFilterChange(updatedFilters);
       }
+
+      // Update the URL with the selected quartier
+      updateUrlAndNotify(updatedFilters);
     } else {
       setFilters({ ...filters, [name]: value });
     }
@@ -268,7 +291,7 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
       bedroom: "",
       bathroom: "",
     };
-    
+
     setFilters(emptyFilters);
 
     // Clear URL params
@@ -297,8 +320,10 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
     };
 
     // Only update state if filters actually changed and not coming from initialFilters
-    if (JSON.stringify(urlFilters) !== JSON.stringify(filters) && 
-        !(initialFilters && Object.keys(initialFilters).length > 0)) {
+    if (
+      JSON.stringify(urlFilters) !== JSON.stringify(filters) &&
+      !(initialFilters && Object.keys(initialFilters).length > 0)
+    ) {
       setFilters(urlFilters);
     }
   }, [location.search, filters, initialFilters]);
@@ -306,9 +331,9 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
   // Calculate active filter count for badge
   const getActiveFilterCount = () => {
     // Don't count ville as active filter since it's always set to Kinshasa
-    return Object.entries(filters)
-      .filter(([key, value]) => key !== 'ville' && value !== "")
-      .length;
+    return Object.entries(filters).filter(
+      ([key, value]) => key !== "ville" && value !== ""
+    ).length;
   };
 
   // Toggle filter expansion (mobile)
@@ -357,30 +382,29 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
               </h4>
               <div className="filter-row">
                 {/* Hidden Ville Filter - Always set to Kinshasa */}
-                <input 
-                  type="hidden" 
-                  name="ville" 
-                  value={filters.ville} 
-                />
+                <input type="hidden" name="ville" value={filters.ville} />
 
                 {/* District Filter */}
                 <div className="filter-group">
-                  <select
-                    id="district"
-                    name="district"
-                    value={filters.district}
-                    onChange={handleChange}
-                    disabled={status === "loading"}
-                    aria-label="District"
-                  >
-                    <option value="">District</option>
-                    {districts &&
-                      districts.map((district) => (
-                        <option key={district} value={district}>
-                          {district}
-                        </option>
-                      ))}
-                  </select>
+                  {status === "loading" ? (
+                    <div className="loading-text">Loading districts...</div>
+                  ) : (
+                    <select
+                      id="district"
+                      name="district"
+                      value={filters.district}
+                      onChange={handleChange}
+                      aria-label="District"
+                    >
+                      <option value="">Select District</option>
+                      {districts &&
+                        districts.map((district) => (
+                          <option key={district} value={district}>
+                            {district}
+                          </option>
+                        ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Commune Filter */}
@@ -394,13 +418,14 @@ const PropertyFilter = ({ onFilterChange, initialFilters }) => {
                     aria-label="Commune"
                   >
                     <option value="">Commune</option>
-                    {filters.district && availableCommunes.length > 0 
+                    {filters.district && availableCommunes.length > 0
                       ? availableCommunes.map((commune) => (
                           <option key={commune} value={commune}>
                             {commune}
                           </option>
                         ))
-                      : communes && communes.map((commune) => (
+                      : communes &&
+                        communes.map((commune) => (
                           <option key={commune} value={commune}>
                             {commune}
                           </option>

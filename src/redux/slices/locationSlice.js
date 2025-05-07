@@ -1,4 +1,3 @@
-// redux/slices/locationSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../../services/api';
 
