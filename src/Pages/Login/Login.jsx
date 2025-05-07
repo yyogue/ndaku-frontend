@@ -114,7 +114,7 @@ const Login = () => {
             </div>
           </form>
           <div className="new-account">
-            <Link to="/register">Créer un nouveau compte</Link>
+            <Link to="/signup">Créer un nouveau compte</Link>
           </div>
         </div>
       </div>
