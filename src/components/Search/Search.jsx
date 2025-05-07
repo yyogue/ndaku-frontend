@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchLocationData } from "../../redux/slices/locationSlice";
-import axios from "../../services/api";
+import API from "../../services/api";
+import { FaSearch, FaMapMarkerAlt } from "react-icons/fa";
 import "./Search.scss";
 
 const useDebounce = (value, delay) => {
@@ -27,7 +28,11 @@ const Search = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const justSelected = useRef(false); // Track if we just selected a suggestion
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const justSelected = useRef(false);
+  const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   useEffect(() => {
     if (status === "idle") {
@@ -35,78 +40,174 @@ const Search = () => {
     }
   }, [dispatch, status]);
 
+  // Handle clicks outside the suggestions dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     if (debouncedSearchTerm.length > 1 && !justSelected.current) {
-      const filtered = [
-        ...quartiers.filter((item) =>
+      // Group suggestions by type for better organization
+      const filteredQuartiers = quartiers
+        .filter((item) =>
           item.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        ),
-        ...communes.filter((item) =>
+        )
+        .map((item) => ({ text: item, type: "quartier" }));
+
+      const filteredCommunes = communes
+        .filter((item) =>
           item.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        ),
-        ...districts.filter((item) =>
+        )
+        .map((item) => ({ text: item, type: "commune" }));
+
+      const filteredDistricts = districts
+        .filter((item) =>
           item.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        ),
-        ...villes.filter((item) =>
+        )
+        .map((item) => ({ text: item, type: "district" }));
+
+      const filteredVilles = villes
+        .filter((item) =>
           item.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        ),
+        )
+        .map((item) => ({ text: item, type: "ville" }));
+
+      // Combine all suggestions with their types
+      const allSuggestions = [
+        ...filteredQuartiers,
+        ...filteredCommunes,
+        ...filteredDistricts,
+        ...filteredVilles,
       ];
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
+
+      // Sort alphabetically within each group
+      allSuggestions.sort((a, b) => a.text.localeCompare(b.text));
+
+      // Limit to 15 suggestions for better UX
+      const limitedSuggestions = allSuggestions.slice(0, 15);
+
+      setSuggestions(limitedSuggestions);
+      setShowSuggestions(limitedSuggestions.length > 0);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
-      justSelected.current = false; // Reset the flag
+      justSelected.current = false;
     }
   }, [debouncedSearchTerm, quartiers, communes, districts, villes]);
 
   const handleSuggestionClick = (suggestion) => {
-    justSelected.current = true; // Set flag to prevent immediate re-show
-    setSearchTerm(suggestion);
+    justSelected.current = true;
+    setSearchTerm(suggestion.text);
     setSuggestions([]);
     setShowSuggestions(false);
+
+    // Navigate directly to search results with filter in URL
+    const queryParams = new URLSearchParams();
+    queryParams.set(suggestion.type, suggestion.text);
+
+    navigate({
+      pathname: "/search-results",
+      search: queryParams.toString(),
+    });
   };
 
-  const handleSearch = async () => {
-    try {
-      const res = await axios.get("/listings");
-      const listings = res.data.listings || [];
-      const filtered = listings.filter((listing) => {
-        const locationFields = [
-          listing.ville,
-          listing.district,
-          listing.commune,
-          listing.quartier,
-          listing.address,
-        ];
-        return locationFields.some((field) =>
-          field?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+  const handleSearch = () => {
+    if (searchTerm.trim().length < 2) {
+      return; // Don't search if term is too short
+    }
+
+    // Try to determine the type of location
+    let locationType = null;
+
+    if (quartiers.includes(searchTerm)) {
+      locationType = "quartier";
+    } else if (communes.includes(searchTerm)) {
+      locationType = "commune";
+    } else if (districts.includes(searchTerm)) {
+      locationType = "district";
+    } else if (villes.includes(searchTerm)) {
+      locationType = "ville";
+    }
+
+    // If we found a location type, navigate with that parameter
+    if (locationType) {
+      const queryParams = new URLSearchParams();
+      queryParams.set(locationType, searchTerm);
+
+      navigate({
+        pathname: "/search-results",
+        search: queryParams.toString(),
       });
-      navigate("/search-results", { state: { results: filtered } });
-    } catch (error) {
-      console.error("Error searching listings:", error);
+    } else {
+      // If no specific location type found, use generic search
+      navigate(`/search-results?search=${encodeURIComponent(searchTerm)}`);
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      handleSearch();
+      if (showSuggestions && suggestions.length > 0) {
+        // Select the first suggestion on Enter
+        handleSuggestionClick(suggestions[0]);
+      } else {
+        handleSearch();
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    } else if (e.key === "ArrowDown" && showSuggestions) {
+      // Focus the first suggestion
+      const suggestionElements = suggestionsRef.current?.querySelectorAll("li");
+      if (suggestionElements?.length > 0) {
+        suggestionElements[0].focus();
+      }
     }
   };
 
-  const handleBlur = () => {
-    setTimeout(() => {
-      if (!justSelected.current) {
-        setShowSuggestions(false);
-      }
-    }, 200);
+  const handleSuggestionKeyDown = (e, index) => {
+    const suggestionElements = suggestionsRef.current?.querySelectorAll("li");
+    if (!suggestionElements || suggestionElements.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextIndex = (index + 1) % suggestionElements.length;
+      suggestionElements[nextIndex].focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevIndex =
+        (index - 1 + suggestionElements.length) % suggestionElements.length;
+      suggestionElements[prevIndex].focus();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      handleSuggestionClick(suggestions[index]);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setShowSuggestions(false);
+      inputRef.current?.focus();
+    }
   };
 
   const handleFocus = () => {
-    if (searchTerm.length > 1 && suggestions.length > 0 && !justSelected.current) {
+    if (
+      searchTerm.length > 1 &&
+      suggestions.length > 0 &&
+      !justSelected.current
+    ) {
       setShowSuggestions(true);
     }
   };
@@ -115,37 +216,100 @@ const Search = () => {
     <div className="searchBox">
       <div className="searchContainer">
         <div className="searchInputContainer">
-          <input
-            type="text"
-            className="searchInput"
-            placeholder="Rechercher par location"
-            value={searchTerm}
-            onChange={(e) => {
-              justSelected.current = false;
-              setSearchTerm(e.target.value);
-            }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-          />
-          {showSuggestions && (
-            <ul className="suggestionsList">
+          <div className="inputWrapper">
+            <FaMapMarkerAlt className="searchIcon" />
+            <input
+              ref={inputRef}
+              type="text"
+              className="searchInput"
+              placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={(e) => {
+                justSelected.current = false;
+                setSearchTerm(e.target.value);
+                if (e.target.value.length > 1) {
+                  setShowSuggestions(true);
+                } else {
+                  setShowSuggestions(false);
+                }
+              }}
+              onFocus={handleFocus}
+              onKeyDown={handleKeyDown}
+              aria-label="Recherche de location"
+              aria-expanded={showSuggestions}
+              aria-autocomplete="list"
+              aria-controls={
+                showSuggestions ? "location-suggestions" : undefined
+              }
+            />
+            {searchTerm && (
+              <button
+                className="clearButton"
+                onClick={() => {
+                  setSearchTerm("");
+                  setShowSuggestions(false);
+                  inputRef.current?.focus();
+                }}
+                aria-label="Effacer la recherche"
+              >
+                ×
+              </button>
+            )}
+            <button
+              className={`searchButton ${isLoading ? "loading" : ""}`}
+              onClick={handleSearch}
+              disabled={isLoading || searchTerm.trim().length < 2}
+              aria-label="Lancer la recherche"
+            >
+              {isLoading ? (
+                <span className="loadingSpinner"></span>
+              ) : (
+                <FaSearch className="searchButtonIcon" />
+              )}
+            </button>
+          </div>
+          {showSuggestions && suggestions.length > 0 && (
+            <ul
+              className="suggestionsList"
+              ref={suggestionsRef}
+              id="location-suggestions"
+              role="listbox"
+            >
               {suggestions.map((suggestion, index) => (
                 <li
-                  key={index}
-                  onMouseDown={(e) => e.preventDefault()} // Prevent input blur
+                  key={`${suggestion.type}-${suggestion.text}-${index}`}
                   onClick={() => handleSuggestionClick(suggestion)}
+                  onKeyDown={(e) => handleSuggestionKeyDown(e, index)}
+                  tabIndex="0"
+                  role="option"
+                  aria-selected={false}
                 >
-                  {suggestion}
+                  <span className="suggestionText">{suggestion.text}</span>
+                  <span className="suggestionType">
+                    {suggestion.type === "quartier"
+                      ? "Quartier"
+                      : suggestion.type === "commune"
+                      ? "Commune"
+                      : suggestion.type === "district"
+                      ? "District"
+                      : suggestion.type === "ville"
+                      ? "Ville"
+                      : suggestion.type}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
         </div>
-        <button className="searchButton" onClick={handleSearch}>
-          Rechercher
-        </button>
       </div>
+
+      {error && <div className="errorMessage">{error}</div>}
+
+      {searchTerm.length > 0 && suggestions.length === 0 && showSuggestions && (
+        <div className="noResults">
+          Aucune suggestion trouvée pour "{searchTerm}"
+        </div>
+      )}
     </div>
   );
 };

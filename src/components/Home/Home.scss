@@ -1,0 +1,79 @@
+.home-container {
+  .hero-section {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+      url("../../assets/images/kinshasa.png");
+    background-size: cover;
+    background-position: center 30%;
+    background-repeat: no-repeat;
+    height:90vh; // Adjust height as needed
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    padding: 0 20px;
+
+    .hero-content {
+      max-width: 800px;
+      width: 100%;
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+      }
+    }
+  }
+
+  // Adjust the search container styling
+  .searchBox {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+
+    .searchContainer {
+      flex-direction: column;
+      background: transparent;
+      box-shadow: none;
+
+      .searchInputContainer {
+        width: 100%;
+      }
+
+      .searchButton {
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
+  }
+}
+
+// For mobile responsiveness
+@media (max-width: 768px) {
+  .home-container {
+    .hero-section {
+      height: 50vh;
+      background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        url("../../assets/images/kinshasa.png");
+      background-position: center -10%;
+
+      .kin{
+        display:none;
+      }
+
+      .hero-content {
+        h1 {
+          font-size: 2rem;
+        }
+
+        p {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+}
